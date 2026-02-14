@@ -1,24 +1,25 @@
 import React from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
-import Header from './components/Header/Header';
-import Footer from './components/Footer/Footer';
-import BottomNav from './components/Navigation/BottomNav';
-import HomePage from './pages/Home/HomePage';
-import ShopPage from './pages/Shop/ShopPage';
-import ProductDetailsPage from './pages/Product/ProductDetailsPage';
-import CartPage from './pages/Cart/CartPage';
-import AccountPage from './pages/Profile/AccountPage';
-import LegalPage from './pages/Profile/LegalPage';
-import ProfilePage from './pages/Profile/ProfilePage';
-import OrdersPage from './pages/Orders/OrdersPage';
-import OffersPage from './pages/Offers/OffersPage';
-import AddressesPage from './pages/Addresses/AddressesPage';
-import ReferPage from './pages/Refer/ReferPage';
-import EventsPage from './pages/Events/EventsPage';
-import ProductsPage from './pages/Products/ProductsPage';
-import WishlistPage from './pages/Wishlist/WishlistPage';
-import LoginPage from './pages/Auth/LoginPage';
-import CheckoutPage from './pages/Checkout/CheckoutPage';
+import Header from './modules/user/components/Header/Header';
+import Footer from './modules/user/components/Footer/Footer';
+import BottomNav from './modules/user/components/Navigation/BottomNav';
+import HomePage from './modules/user/pages/Home/HomePage';
+import ShopPage from './modules/user/pages/Shop/ShopPage';
+import ProductDetailsPage from './modules/user/pages/Product/ProductDetailsPage';
+import CartPage from './modules/user/pages/Cart/CartPage';
+import AccountPage from './modules/user/pages/Profile/AccountPage';
+import LegalPage from './modules/user/pages/Profile/LegalPage';
+import ProfilePage from './modules/user/pages/Profile/ProfilePage';
+import OrdersPage from './modules/user/pages/Orders/OrdersPage';
+import OffersPage from './modules/user/pages/Offers/OffersPage';
+import AddressesPage from './modules/user/pages/Addresses/AddressesPage';
+import ReferPage from './modules/user/pages/Refer/ReferPage';
+import EventsPage from './modules/user/pages/Events/EventsPage';
+import ProductsPage from './modules/user/pages/Products/ProductsPage';
+import WishlistPage from './modules/user/pages/Wishlist/WishlistPage';
+import LoginPage from './modules/user/pages/Auth/LoginPage';
+import CheckoutPage from './modules/user/pages/Checkout/CheckoutPage';
+import AdminRoutes from './modules/admin/AdminRoutes';
 
 function App() {
   const location = useLocation();
@@ -32,14 +33,16 @@ function App() {
 
   const accountRoutes = ['/profile', '/orders', '/offers', '/addresses', '/refer', '/events'];
   const isAccountDetail = accountRoutes.includes(location.pathname) || location.pathname.startsWith('/legal/');
+  const isAdmin = location.pathname.startsWith('/admin');
 
-  // Hide global nav on Login, Checkout, OR Account Detail pages on Mobile
+  // Hide global nav on Login, Checkout, Account Detail (Mobile), OR ADMIN pages
   const hideNav = location.pathname === '/login' ||
     location.pathname === '/checkout' ||
+    isAdmin ||
     (isAccountDetail && isMobile);
 
   return (
-    <div className="min-h-screen flex flex-col font-main bg-[#fafafa]">
+    <div className={`min-h-screen flex flex-col font-main ${isAdmin ? 'bg-gray-50' : 'bg-[#fafafa]'}`}>
       {!hideNav && <Header />}
       <main
         key={location.pathname}
@@ -62,6 +65,9 @@ function App() {
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
+
+          {/* Admin Module Routes */}
+          <Route path="/admin/*" element={<AdminRoutes />} />
         </Routes>
       </main>
       {!hideNav && <Footer />}

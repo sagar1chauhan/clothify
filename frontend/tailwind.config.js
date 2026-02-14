@@ -7,7 +7,23 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#000000',
+        primary: {
+          50: '#f0f7ff',
+          100: '#e0effe',
+          200: '#bae0fd',
+          300: '#7cc8fb',
+          400: '#38acf7',
+          500: '#2874F0', // Main brand blue
+          600: '#0168e4',
+          700: '#0253b8',
+          800: '#064595',
+          900: '#0b3b7a',
+          950: '#072550',
+        },
+        'primary-green': {
+          DEFAULT: '#2ecc71',
+          hover: '#27ae60',
+        },
         secondary: '#ffffff',
         accent: '#ff007a',
         'text-primary': '#1a1a1a',
