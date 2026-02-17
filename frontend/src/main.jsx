@@ -5,6 +5,7 @@ import { CartProvider } from './modules/user/context/CartContext.jsx'
 import { AuthProvider } from './modules/user/context/AuthContext.jsx'
 import { CategoryProvider } from './modules/user/context/CategoryContext.jsx'
 import { WishlistProvider } from './modules/user/context/WishlistContext.jsx'
+import { LocationProvider } from './modules/user/context/LocationContext.jsx'
 import './index.css'
 import App from './App.jsx'
 
@@ -15,7 +16,9 @@ createRoot(document.getElementById('root')).render(
         <WishlistProvider>
           <CartProvider>
             <CategoryProvider>
-              <App />
+              <LocationProvider>
+                <App />
+              </LocationProvider>
             </CategoryProvider>
           </CartProvider>
         </WishlistProvider>

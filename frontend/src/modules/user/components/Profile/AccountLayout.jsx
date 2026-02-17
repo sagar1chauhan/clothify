@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ProfileSidebar from './ProfileSidebar';
-import { History, ShieldCheck, RefreshCcw, Truck, ChevronLeft } from 'lucide-react';
+import { History, ShieldCheck, RefreshCcw, Truck, ChevronLeft, MapPin, ChevronDown } from 'lucide-react';
+import { useLocation as useLocationContext } from '../../context/LocationContext';
+import LocationModal from '../../components/Header/LocationModal';
 
-const AccountLayout = ({ children, isMenuPage = false }) => {
+const AccountLayout = ({ children, isMenuPage = false, hideHeader = false }) => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { activeAddress } = useLocationContext();
     const [isMobile, setIsMobile] = React.useState(window.innerWidth < 1024); // lg breakpoint
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
     React.useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -29,8 +33,29 @@ const AccountLayout = ({ children, isMenuPage = false }) => {
     return (
         <div className="bg-[#fcfcfc] min-h-screen pb-12">
             <div className="container mx-auto px-4 md:px-8 lg:px-12 py-4 md:py-8">
+                {/* Mobile Location Bar - Global Consistency */}
+                {isMobile && !hideHeader && (
+                    <div
+                        onClick={() => setIsLocationModalOpen(true)}
+                        className="flex items-center justify-between py-3 mb-6 bg-white border-b border-gray-100 cursor-pointer active:bg-gray-50 transition-colors -mx-4 px-4"
+                    >
+                        <div className="flex items-center gap-3 overflow-hidden">
+                            <MapPin size={16} className="text-black shrink-0" />
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-[12px] font-black leading-tight flex items-center gap-2 text-gray-900">
+                                    {activeAddress ? activeAddress.name : 'Select Location'} <span className="text-[9px] font-normal uppercase tracking-wider text-gray-500">{activeAddress?.type}</span>
+                                </span>
+                                <span className="text-[10px] font-medium truncate max-w-[200px] text-gray-500">
+                                    {activeAddress ? `${activeAddress.address}, ${activeAddress.city}` : 'Add an address to see delivery info'}
+                                </span>
+                            </div>
+                        </div>
+                        <ChevronDown size={14} className="text-gray-400" />
+                    </div>
+                )}
+
                 {/* Mobile Back Header */}
-                {isMobile && !isMenuPage && (
+                {isMobile && !isMenuPage && !hideHeader && (
                     <div className="flex items-center gap-4 mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
                         <button
                             onClick={() => navigate('/account')}
@@ -75,6 +100,11 @@ const AccountLayout = ({ children, isMenuPage = false }) => {
                     </div>
                 )}
             </div>
+
+            <LocationModal
+                isOpen={isLocationModalOpen}
+                onClose={() => setIsLocationModalOpen(false)}
+            />
         </div>
     );
 };

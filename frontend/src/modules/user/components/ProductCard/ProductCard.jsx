@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Heart, Plus } from 'lucide-react';
+import { Heart, ShoppingCart } from 'lucide-react';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 
@@ -26,17 +26,25 @@ const ProductCard = ({ product }) => {
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
 
-                    {/* Micro Wishlist Button */}
-                    <button
-                        className={`absolute top-2 right-2 w-7 h-7 rounded-lg flex items-center justify-center transition-all bg-white/90 shadow-sm active:scale-90 ${isInWishlist(product.id) ? 'text-red-500' : 'text-black opacity-60'}`}
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            toggleWishlist(product);
-                        }}
-                    >
-                        <Heart size={12} className={isInWishlist(product.id) ? 'fill-red-500' : ''} />
-                    </button>
+                    {/* Action Icons - ALWAYS VISIBLE */}
+                    <div className="absolute top-2 left-2 flex gap-1.5 z-10">
+                        <button
+                            className="w-8 h-8 rounded-full flex items-center justify-center bg-[#ffcc00] text-black shadow-lg active:scale-90 transition-all border border-black/5"
+                            onClick={handleAddToCart}
+                        >
+                            <ShoppingCart size={14} strokeWidth={3} />
+                        </button>
+                        <button
+                            className={`w-8 h-8 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all border border-black/5 ${isInWishlist(product.id) ? 'bg-red-500 text-white' : 'bg-white text-black'}`}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                toggleWishlist(product);
+                            }}
+                        >
+                            <Heart size={14} className={isInWishlist(product.id) ? 'fill-white' : ''} />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="p-2 pb-3 bg-white">
@@ -55,14 +63,6 @@ const ProductCard = ({ product }) => {
                     </div>
                 </div>
             </Link>
-
-            {/* Micro Quick Add - Bottom Right */}
-            <button
-                className="absolute bottom-[85px] right-2 w-8 h-8 bg-black text-white rounded-xl flex items-center justify-center shadow-lg opacity-0 md:group-hover:opacity-100 transition-all active:scale-90 z-20"
-                onClick={handleAddToCart}
-            >
-                <Plus size={16} strokeWidth={4} />
-            </button>
         </div>
     );
 };

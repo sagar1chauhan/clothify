@@ -29,8 +29,8 @@ const OrdersPage = () => {
                 ) : (
                     <div className="space-y-6">
                         {orders.map((order) => (
-                            <div key={order.id} className="bg-white rounded-[24px] border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all group">
-                                <div className="flex justify-between items-start mb-6 pb-4 border-b border-gray-50">
+                            <div key={order.id} className="bg-white rounded-[24px] border border-gray-100 p-4 md:p-6 shadow-sm hover:shadow-md transition-all group">
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-gray-50">
                                     <div>
                                         <div className="flex items-center gap-3 mb-1">
                                             <span className="text-[10px] font-black bg-black text-white px-2 py-0.5 rounded uppercase tracking-wider">
@@ -42,9 +42,12 @@ const OrdersPage = () => {
                                             <Clock size={12} /> Placed on {order.date}
                                         </p>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-left sm:text-right w-full sm:w-auto flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-end">
                                         <p className="text-sm font-black text-black">Total: ₹{order.total}</p>
-                                        <button className="text-[10px] font-bold text-[#ffcc00] uppercase tracking-widest mt-1 hover:text-black transition-colors">
+                                        <button
+                                            onClick={() => navigate(`/orders/${order.id}`)}
+                                            className="text-[10px] font-bold text-[#ffcc00] uppercase tracking-widest mt-0 sm:mt-1 hover:text-black transition-colors"
+                                        >
                                             View Details
                                         </button>
                                     </div>
@@ -52,7 +55,7 @@ const OrdersPage = () => {
 
                                 <div className="space-y-4">
                                     {order.items.map((item, idx) => (
-                                        <div key={idx} className="flex gap-4">
+                                        <div key={idx} className="flex gap-3 md:gap-4">
                                             <div className="w-16 h-20 bg-gray-50 rounded-xl overflow-hidden shrink-0 border border-gray-100">
                                                 <img src={item.image} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                             </div>
@@ -70,9 +73,9 @@ const OrdersPage = () => {
                                 <div className="mt-6 pt-4 border-t border-gray-50 flex justify-between items-center">
                                     <div className="flex items-center gap-2 text-xs font-bold text-green-600">
                                         <Package size={14} />
-                                        Expected Delivery by {new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                                        <span className="truncate">Expected Delivery by {new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString()}</span>
                                     </div>
-                                    <button className="p-2 hover:bg-gray-50 rounded-full transition-colors">
+                                    <button className="p-2 hover:bg-gray-50 rounded-full transition-colors shrink-0">
                                         <ChevronRight size={16} />
                                     </button>
                                 </div>

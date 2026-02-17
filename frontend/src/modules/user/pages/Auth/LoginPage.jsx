@@ -26,6 +26,12 @@ const LoginPage = () => {
 
     const handleSendOTP = async (e) => {
         e.preventDefault();
+
+        if (!mobileNumber) {
+            setError('Mobile number is required to proceed');
+            return;
+        }
+
         if (mobileNumber.length !== 10) {
             setError('Please enter a valid 10-digit mobile number');
             return;
@@ -43,8 +49,25 @@ const LoginPage = () => {
         }, 1500);
     };
 
+    const handleResendOTP = async () => {
+        setError('');
+        setIsLoading(true);
+
+        // Mock OTP sending
+        setTimeout(() => {
+            setIsLoading(false);
+            setResendTimer(30);
+        }, 1500);
+    };
+
     const handleVerifyOTP = async (e) => {
         e.preventDefault();
+
+        if (!otp) {
+            setError('Please enter the OTP sent to your phone');
+            return;
+        }
+
         if (otp.length !== 6) {
             setError('Please enter the 6-digit OTP');
             return;
@@ -109,7 +132,7 @@ const LoginPage = () => {
                 </div>
 
                 {/* Form */}
-                <form className="space-y-6 relative z-10" onSubmit={step === 1 ? handleSendOTP : handleVerifyOTP}>
+                <form className="space-y-6 relative z-10" onSubmit={step === 1 ? handleSendOTP : handleVerifyOTP} noValidate>
                     <div className="space-y-4">
                         {step === 1 ? (
                             <div className="relative group">
@@ -123,10 +146,12 @@ const LoginPage = () => {
                                     <input
                                         type="tel"
                                         maxLength="10"
-                                        required
                                         value={mobileNumber}
-                                        onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, ''))}
-                                        className="w-full pl-20 pr-4 py-4.5 bg-gray-50/50 border-2 border-gray-100 rounded-2xl focus:border-black focus:bg-white outline-none font-black text-gray-900 transition-all placeholder:text-gray-300 tracking-widest"
+                                        onChange={(e) => {
+                                            setMobileNumber(e.target.value.replace(/\D/g, ''));
+                                            if (error) setError('');
+                                        }}
+                                        className={`w-full pl-20 pr-4 py-5 bg-gray-50/50 border-2 rounded-2xl focus:bg-white outline-none font-black text-gray-900 transition-all placeholder:text-gray-300 tracking-widest ${error ? 'border-red-500 bg-red-50/10' : 'border-gray-100 focus:border-black'}`}
                                         placeholder="00000 00000"
                                     />
                                 </div>
@@ -141,11 +166,13 @@ const LoginPage = () => {
                                     <input
                                         type="text"
                                         maxLength="6"
-                                        required
                                         autoFocus
                                         value={otp}
-                                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                                        className="w-full pl-12 pr-4 py-4.5 bg-gray-50/50 border-2 border-gray-100 rounded-2xl focus:border-black focus:bg-white outline-none font-black text-gray-900 transition-all placeholder:text-gray-300 tracking-[0.5em]"
+                                        onChange={(e) => {
+                                            setOtp(e.target.value.replace(/\D/g, ''));
+                                            if (error) setError('');
+                                        }}
+                                        className={`w-full pl-12 pr-4 py-5 bg-gray-50/50 border-2 rounded-2xl focus:bg-white outline-none font-black text-gray-900 transition-all placeholder:text-gray-300 tracking-[0.5em] ${error ? 'border-red-500 bg-red-50/10' : 'border-gray-100 focus:border-black'}`}
                                         placeholder="••••••"
                                     />
                                 </div>
@@ -156,10 +183,11 @@ const LoginPage = () => {
                                     {resendTimer === 0 && (
                                         <button
                                             type="button"
-                                            onClick={() => setResendTimer(30)}
-                                            className="text-[11px] font-black text-black uppercase tracking-widest hover:underline"
+                                            onClick={handleResendOTP}
+                                            disabled={isLoading}
+                                            className={`text-[11px] font-black text-black uppercase tracking-widest hover:underline ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                         >
-                                            Resend OTP
+                                            {isLoading ? 'Sending...' : 'Resend OTP'}
                                         </button>
                                     )}
                                 </div>
@@ -168,9 +196,14 @@ const LoginPage = () => {
                     </div>
 
                     {error && (
-                        <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-[12px] font-bold border border-red-100 animate-shake flex items-center gap-3">
-                            <div className="w-1.5 h-1.5 rounded-full bg-red-600" />
-                            {error}
+                        <div className="bg-white text-gray-900 p-4 rounded-2xl text-[13px] font-bold border-2 border-black/5 animate-shake flex items-center gap-4 shadow-xl ring-4 ring-red-500/10">
+                            <div className="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-red-200">
+                                <Phone size={18} className="text-white" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500 mb-0.5">Alert</p>
+                                <p className="leading-tight">{error}</p>
+                            </div>
                         </div>
                     )}
 

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
     Heart,
-    ShoppingBag,
+    ShoppingCart,
     Star,
     Share2,
     ChevronLeft,
@@ -12,22 +13,31 @@ import {
     Check,
     ChevronDown,
     ChevronUp,
-    Info
+    Info,
+    MapPin,
+    X,
+    CheckCircle2
 } from 'lucide-react';
 import { products } from '../../data';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
+import LocationModal from '../../components/Header/LocationModal';
+import { useLocation as useLocationContext } from '../../context/LocationContext';
 
 const ProductDetailsPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { addToCart } = useCart();
+    const { addToCart, cart, getCartCount } = useCart();
     const { toggleWishlist, isInWishlist } = useWishlist();
+    const { activeAddress } = useLocationContext();
 
     const [product, setProduct] = useState(null);
     const [selectedSize, setSelectedSize] = useState('');
     const [activeImg, setActiveImg] = useState(0);
     const [openAccordion, setOpenAccordion] = useState('description');
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+    const [isSizeChartOpen, setIsSizeChartOpen] = useState(false); // Modal state
+    const [showAddedToast, setShowAddedToast] = useState(false);
 
     useEffect(() => {
         const foundProduct = products.find(p => p.id === parseInt(id));
@@ -47,12 +57,12 @@ const ProductDetailsPage = () => {
 
     const handleAddToCart = () => {
         if (!selectedSize) {
-            // Shake effect or toast would be better
             alert('Please select a size first');
             return;
         }
         addToCart({ ...product, selectedSize });
-        // Navigate to cart or show success
+        setShowAddedToast(true);
+        setTimeout(() => setShowAddedToast(false), 3000);
     };
 
     const toggleAccordion = (id) => {
@@ -69,6 +79,9 @@ const ProductDetailsPage = () => {
 
     const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
+    // Cart count logic
+    const cartCount = getCartCount();
+
     return (
         <div className="bg-[#fafafa] min-h-screen pb-20">
             {/* Mobile Header */}
@@ -76,12 +89,50 @@ const ProductDetailsPage = () => {
                 <button onClick={() => navigate(-1)} className="p-2 -ml-2">
                     <ChevronLeft size={24} />
                 </button>
-                <h1 className="text-sm font-black uppercase tracking-widest truncate max-w-[200px]">{product.brand}</h1>
+                <div className="flex-1 flex justify-center">
+                    <h1 className="text-sm font-black uppercase tracking-widest truncate max-w-[150px]">{product.brand}</h1>
+                </div>
                 <div className="flex items-center gap-4">
-                    <Share2 size={20} />
-                    <ShoppingBag size={20} />
+                    <button
+                        onClick={() => toggleWishlist(product)}
+                        className="relative transition-colors"
+                    >
+                        <Heart size={20} className={isInWishlist(product?.id) ? 'fill-red-500 text-red-500' : 'text-black'} />
+                    </button>
+                    <Link to="/cart" className="relative">
+                        <ShoppingCart size={20} />
+                        {cartCount > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 bg-[#39ff14] text-black text-[9px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white">
+                                {cartCount}
+                            </span>
+                        )}
+                    </Link>
                 </div>
             </div>
+
+            {/* Address Bar - New Row */}
+            <div
+                onClick={() => setIsLocationModalOpen(true)}
+                className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 cursor-pointer active:bg-gray-50 transition-colors"
+            >
+                <div className="flex items-center gap-3 overflow-hidden">
+                    <MapPin size={16} className="text-black shrink-0" />
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-[12px] font-black leading-tight flex items-center gap-2 text-gray-900">
+                            {activeAddress ? activeAddress.name : 'Select Location'} <span className="text-[9px] font-normal uppercase tracking-wider text-gray-500">{activeAddress?.type}</span>
+                        </span>
+                        <span className="text-[10px] font-medium truncate max-w-[200px] text-gray-500">
+                            {activeAddress ? `${activeAddress.address}, ${activeAddress.city}` : 'Add an address to see delivery info'}
+                        </span>
+                    </div>
+                </div>
+                <ChevronDown size={14} className="text-gray-400" />
+            </div>
+
+            <LocationModal
+                isOpen={isLocationModalOpen}
+                onClose={() => setIsLocationModalOpen(false)}
+            />
 
             <div className="container mx-auto px-4 py-4 md:py-6">
                 <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
@@ -172,7 +223,12 @@ const ProductDetailsPage = () => {
                                 <h3 className="text-[12px] font-black uppercase tracking-widest text-black flex items-center gap-2">
                                     Select Size <Info size={14} className="text-gray-400" />
                                 </h3>
-                                <button className="text-[11px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-600 pb-0.5">Size Chart</button>
+                                <button
+                                    onClick={() => setIsSizeChartOpen(true)}
+                                    className="text-[11px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-600 pb-0.5 hover:text-blue-800 transition-colors"
+                                >
+                                    Size Chart
+                                </button>
                             </div>
                             <div className="flex flex-wrap gap-3">
                                 {sizes.map((size) => (
@@ -200,14 +256,14 @@ const ProductDetailsPage = () => {
                             )}
                         </div>
 
-                        {/* Actions */}
+                        {/* Actions - Inline */}
                         <div className="flex gap-4 mb-8">
                             <button
                                 onClick={handleAddToCart}
                                 className="flex-[3] h-16 bg-black text-white rounded-[20px] font-black text-[14px] uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all shadow-[0_10px_30px_rgba(0,0,0,0.15)] hover:bg-[#1a1a1a]"
                             >
-                                <ShoppingBag size={20} />
-                                Add to Bag
+                                <ShoppingCart size={20} />
+                                Add to Cart
                             </button>
                             <button
                                 onClick={() => toggleWishlist(product)}
@@ -307,25 +363,113 @@ const ProductDetailsPage = () => {
                     </div>
                 </div>
             </div>
+            {/* Removed sticky bottom actions */}
+            {/* Size Chart Modal */}
+            <SizeChartModal
+                isOpen={isSizeChartOpen}
+                onClose={() => setIsSizeChartOpen(false)}
+            />
 
-            {/* Sticky Bottom Actions - Mobile */}
-            <div className="md:hidden fixed bottom-0 left-0 w-full bg-white px-4 py-3 border-t border-gray-100 z-50 flex gap-3 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
-                <button
-                    onClick={() => toggleWishlist(product)}
-                    className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all ${isInWishlist(product?.id) ? 'bg-red-50 border-red-100 text-red-500' : 'bg-white border-gray-100'
-                        }`}
-                >
-                    <Heart size={24} className={isInWishlist(product?.id) ? 'fill-red-500' : ''} />
-                </button>
-                <button
-                    onClick={handleAddToCart}
-                    className="flex-1 bg-black text-white rounded-2xl font-black text-[14px] uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all"
-                >
-                    <ShoppingBag size={20} />
-                    Add to Bag
-                </button>
-            </div>
+            {/* Added to Cart Success Popup */}
+            {showAddedToast && createPortal(
+                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[10001] w-[90%] max-w-[400px] animate-fadeInUp">
+                    <div className="bg-black/90 backdrop-blur-xl border border-white/20 p-4 rounded-[24px] shadow-2xl flex items-center gap-4">
+                        <div className="w-12 h-12 bg-[#39ff14] rounded-2xl flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(57,255,20,0.3)]">
+                            <CheckCircle2 size={24} className="text-black" />
+                        </div>
+                        <div className="flex-1">
+                            <h4 className="text-white text-[14px] font-black uppercase tracking-tight">Success!</h4>
+                            <p className="text-gray-400 text-[11px] font-bold">Your product has been added to cart</p>
+                        </div>
+                        <Link
+                            to="/cart"
+                            className="bg-white text-black px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-[#39ff14] transition-colors no-underline"
+                        >
+                            View Cart
+                        </Link>
+                    </div>
+                </div>,
+                document.body
+            )}
         </div>
+    );
+};
+
+const SizeChartModal = ({ isOpen, onClose }) => {
+    if (!isOpen) return null;
+
+    const sizeData = [
+        { size: 'XS', chest: '37', length: '24.5', shoulder: '16.5', sleeves: '24' },
+        { size: 'S', chest: '39', length: '25', shoulder: '17', sleeves: '24.5' },
+        { size: 'M', chest: '41', length: '26', shoulder: '17.5', sleeves: '24.5' },
+        { size: 'L', chest: '43', length: '26.5', shoulder: '18', sleeves: '25' },
+        { size: 'XL', chest: '44', length: '27', shoulder: '18.5', sleeves: '25' },
+        { size: 'XXL', chest: '46', length: '27.5', shoulder: '19.5', sleeves: '25.5' },
+    ];
+
+    return createPortal(
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-[5px] animate-fadeIn">
+            <div className="bg-white w-full max-w-md rounded-[32px] shadow-2xl overflow-hidden relative animate-scaleIn">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                    <div>
+                        <h2 className="text-lg font-black uppercase tracking-tight text-gray-900">Size Guide</h2>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Measurements in inches</p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-all active:scale-95"
+                    >
+                        <X size={20} className="text-black" />
+                    </button>
+                </div>
+
+                {/* Table Content */}
+                <div className="p-6">
+                    <div className="overflow-hidden border border-gray-100 rounded-[20px] shadow-sm">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-gray-50">
+                                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500 border-b border-gray-100 italic">Size</th>
+                                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500 border-b border-gray-100">Chest</th>
+                                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500 border-b border-gray-100">Length</th>
+                                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500 border-b border-gray-100">Shoulder</th>
+                                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500 border-b border-gray-100">Sleeves</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {sizeData.map((row) => (
+                                    <tr key={row.size} className="hover:bg-gray-50/50 transition-colors">
+                                        <td className="px-4 py-4 text-[12px] font-black text-black italic bg-gray-50/30">{row.size}</td>
+                                        <td className="px-4 py-4 text-[13px] font-bold text-gray-600">{row.chest}</td>
+                                        <td className="px-4 py-4 text-[13px] font-bold text-gray-600">{row.length}</td>
+                                        <td className="px-4 py-4 text-[13px] font-bold text-gray-600">{row.shoulder}</td>
+                                        <td className="px-4 py-4 text-[13px] font-bold text-gray-600">{row.sleeves}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="mt-6 p-4 bg-gray-50 rounded-2xl">
+                        <p className="text-[10px] font-bold text-gray-500 italic leading-relaxed">
+                            * These are product measurements. For the perfect fit, we recommend comparing these measurements with a similar item you already own.
+                        </p>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="p-4 bg-[#fafafa] border-t border-gray-100">
+                    <button
+                        onClick={onClose}
+                        className="w-full py-4 bg-black text-white rounded-[20px] font-black text-[12px] uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all"
+                    >
+                        Got It
+                    </button>
+                </div>
+            </div>
+        </div>,
+        document.body
     );
 };
 

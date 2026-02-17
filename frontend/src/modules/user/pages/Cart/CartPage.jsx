@@ -1,13 +1,17 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag, Heart, ShieldCheck, ChevronRight } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag, Heart, ShieldCheck, ChevronRight, MapPin, ChevronDown } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
+import LocationModal from '../../components/Header/LocationModal';
+import { useLocation as useLocationContext } from '../../context/LocationContext';
 
 const CartPage = () => {
     const { cart, removeFromCart, updateQuantity, getCartTotal } = useCart();
     const { addToWishlist } = useWishlist();
+    const { activeAddress } = useLocationContext();
     const navigate = useNavigate();
+    const [isLocationModalOpen, setIsLocationModalOpen] = React.useState(false);
 
     const totalMRP = cart.reduce((acc, item) => acc + (item.originalPrice * item.quantity), 0);
     const totalDiscount = totalMRP - getCartTotal();
@@ -18,9 +22,9 @@ const CartPage = () => {
                 <div className="w-32 h-32 bg-gray-50 rounded-full flex items-center justify-center mb-8">
                     <ShoppingBag size={48} className="text-gray-200" />
                 </div>
-                <h2 className="text-2xl font-black uppercase tracking-tight text-gray-900 mb-2">Your Bag is Empty</h2>
+                <h2 className="text-2xl font-black uppercase tracking-tight text-gray-900 mb-2">Your cart is Empty</h2>
                 <p className="text-gray-500 font-bold text-[13px] uppercase tracking-widest mb-10 text-center max-w-xs leading-relaxed">
-                    Looks like you haven't added anything to your bag yet.
+                    Looks like you haven't added anything to your cart yet.
                 </p>
                 <button
                     onClick={() => navigate('/products')}
@@ -41,16 +45,46 @@ const CartPage = () => {
         <div className="bg-[#fafafa] min-h-screen pb-24 md:pb-12">
             {/* Mobile Header Nav */}
             <div className="md:hidden sticky top-0 bg-white z-40 border-b border-gray-100 px-4 py-4 flex items-center gap-4">
-                <button onClick={() => navigate(-1)} className="p-1"><ArrowLeft size={20} /></button>
+                <button onClick={() => {
+                    if (window.history.length > 2) {
+                        navigate(-1);
+                    } else {
+                        navigate('/products');
+                    }
+                }} className="p-3 -ml-2 rounded-full hover:bg-gray-100 transition-colors"><ArrowLeft size={20} /></button>
                 <div className="flex-1">
-                    <h1 className="text-base font-black uppercase tracking-tight">Shopping Bag</h1>
+                    <h1 className="text-base font-black uppercase tracking-tight">Shopping cart</h1>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{cart.length} Items</p>
                 </div>
             </div>
 
+            {/* Address Bar - New Row */}
+            <div
+                onClick={() => setIsLocationModalOpen(true)}
+                className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 cursor-pointer active:bg-gray-50 transition-colors"
+            >
+                <div className="flex items-center gap-3 overflow-hidden">
+                    <MapPin size={16} className="text-black shrink-0" />
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-[12px] font-black leading-tight flex items-center gap-2 text-gray-900">
+                            {activeAddress ? activeAddress.name : 'Select Location'} <span className="text-[9px] font-normal uppercase tracking-wider text-gray-500">{activeAddress?.type}</span>
+                        </span>
+                        <span className="text-[10px] font-medium truncate max-w-[200px] text-gray-500">
+                            {activeAddress ? `${activeAddress.address}, ${activeAddress.city}` : 'Add an address to see delivery info'}
+                        </span>
+                    </div>
+                </div>
+                <ChevronDown size={14} className="text-gray-400" />
+            </div>
+
+            <LocationModal
+                isOpen={isLocationModalOpen}
+                onClose={() => setIsLocationModalOpen(false)}
+            />
+
             <div className="container mx-auto px-4 py-8 max-w-7xl">
                 <div className="hidden md:block mb-10">
-                    <h1 className="text-3xl font-black uppercase tracking-tight text-gray-900">Your Bag</h1>
+                    <h1 className="text-3xl font-black uppercase tracking-tight text-gray-900">Your cart</h1>
                     <p className="text-[14px] font-bold text-gray-400 mt-1 uppercase tracking-[0.2em]">{cart.length} Items</p>
                 </div>
 
@@ -136,7 +170,7 @@ const CartPage = () => {
                         <div className="bg-white rounded-[32px] overflow-hidden border border-gray-100 shadow-xl sticky top-28">
                             <div className="p-8">
                                 <h3 className="text-[14px] font-black uppercase tracking-widest text-gray-900 mb-8 flex items-center justify-between">
-                                    Bag Summary
+                                    cart Summary
                                     <ShoppingBag size={18} className="text-gray-300" />
                                 </h3>
 
@@ -146,7 +180,7 @@ const CartPage = () => {
                                         <span className="text-gray-900 font-black tracking-tight">₹{totalMRP}</span>
                                     </div>
                                     <div className="flex justify-between text-[13px] font-bold">
-                                        <span className="text-gray-400 uppercase tracking-widest">Bag Discount</span>
+                                        <span className="text-gray-400 uppercase tracking-widest">cart Discount</span>
                                         <span className="text-emerald-600 font-black tracking-tight">-₹{totalDiscount}</span>
                                     </div>
                                     <div className="flex justify-between text-[13px] font-bold">

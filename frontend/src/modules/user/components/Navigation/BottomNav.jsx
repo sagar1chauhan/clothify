@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Grid, Heart, User, Compass } from 'lucide-react';
+import { Home, Grid, ShoppingCart, User, Compass } from 'lucide-react';
+import { useCart } from '../../context/CartContext';
 
 const BottomNav = () => {
+    const { getCartCount } = useCart();
+    const cartCount = getCartCount();
     const location = useLocation();
     const [isVisible, setIsVisible] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
@@ -50,21 +53,26 @@ const BottomNav = () => {
                 className={({ isActive }) => `flex flex-col items-center gap-1 text-[10px] font-bold uppercase tracking-wider no-underline ${isActive ? 'text-accent' : 'text-gray-400'}`}
             >
                 <Compass size={22} className={location.pathname === '/shop' ? 'animate-spin-slow' : ''} />
-                <span>Discover</span>
+                <span>Categories</span>
             </NavLink>
-            <NavLink
+            {/* <NavLink
                 to="/shop"
                 className={({ isActive }) => `flex flex-col items-center gap-1 text-[10px] font-bold uppercase tracking-wider no-underline ${isActive && location.hash === '#categories' ? 'text-accent' : 'text-gray-400'}`}
             >
                 <Grid size={22} />
                 <span>Categories</span>
-            </NavLink>
+            </NavLink> */}
             <NavLink
-                to="/wishlist"
-                className={({ isActive }) => `flex flex-col items-center gap-1 text-[10px] font-bold uppercase tracking-wider no-underline ${isActive ? 'text-accent' : 'text-gray-400'}`}
+                to="/cart"
+                className={({ isActive }) => `flex flex-col items-center gap-1 text-[10px] font-bold uppercase tracking-wider no-underline relative ${isActive ? 'text-accent' : 'text-gray-400'}`}
             >
-                <Heart size={22} />
-                <span>Wishlist</span>
+                <ShoppingCart size={22} />
+                {cartCount > 0 && (
+                    <span className="absolute -top-1.5 right-1.5 bg-black text-white text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white">
+                        {cartCount}
+                    </span>
+                )}
+                <span>Cart</span>
             </NavLink>
             <NavLink
                 to="/account"

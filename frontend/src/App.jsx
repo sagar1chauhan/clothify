@@ -10,6 +10,7 @@ import CartPage from './modules/user/pages/Cart/CartPage';
 import AccountPage from './modules/user/pages/Profile/AccountPage';
 import LegalPage from './modules/user/pages/Profile/LegalPage';
 import ProfilePage from './modules/user/pages/Profile/ProfilePage';
+import OrderDetailsPage from './modules/user/pages/Orders/OrderDetailsPage';
 import OrdersPage from './modules/user/pages/Orders/OrdersPage';
 import OffersPage from './modules/user/pages/Offers/OffersPage';
 import AddressesPage from './modules/user/pages/Addresses/AddressesPage';
@@ -19,6 +20,7 @@ import ProductsPage from './modules/user/pages/Products/ProductsPage';
 import WishlistPage from './modules/user/pages/Wishlist/WishlistPage';
 import LoginPage from './modules/user/pages/Auth/LoginPage';
 import CheckoutPage from './modules/user/pages/Checkout/CheckoutPage';
+import PaymentPage from './modules/user/pages/Payment/PaymentPage';
 import AdminRoutes from './modules/admin/AdminRoutes';
 
 function App() {
@@ -36,14 +38,21 @@ function App() {
   const isAdmin = location.pathname.startsWith('/admin');
 
   // Hide global nav on Login, Checkout, Account Detail (Mobile), OR ADMIN pages
+  const isProductDetail = location.pathname.startsWith('/product/');
   const hideNav = location.pathname === '/login' ||
     location.pathname === '/checkout' ||
     isAdmin ||
-    (isAccountDetail && isMobile);
+    (isAccountDetail && isMobile) ||
+    location.pathname === '/products' ||
+    location.pathname === '/cart' ||
+    location.pathname === '/payment';
+
+  const hideHeader = hideNav || isProductDetail || location.pathname === '/wishlist';
+  const hideFooter = hideNav || isProductDetail || location.pathname === '/wishlist';
 
   return (
     <div className={`min-h-screen flex flex-col font-main ${isAdmin ? 'bg-gray-50' : 'bg-[#fafafa]'}`}>
-      {!hideNav && <Header />}
+      {!hideHeader && <Header />}
       <main
         key={location.pathname}
         className={`flex-1 ${(!hideNav || (isAccountDetail && !isMobile)) ? 'pb-[60px] md:pb-0' : ''} animate-fadeInUp`}
@@ -56,7 +65,9 @@ function App() {
           <Route path="/account" element={<AccountPage />} />
           <Route path="/legal/:pageId" element={<LegalPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+
           <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/orders/:orderId" element={<OrderDetailsPage />} />
           <Route path="/offers" element={<OffersPage />} />
           <Route path="/addresses" element={<AddressesPage />} />
           <Route path="/refer" element={<ReferPage />} />
@@ -65,12 +76,13 @@ function App() {
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/payment" element={<PaymentPage />} />
 
           {/* Admin Module Routes */}
           <Route path="/admin/*" element={<AdminRoutes />} />
         </Routes>
       </main>
-      {!hideNav && <Footer />}
+      {!hideFooter && <Footer />}
       {!hideNav && <BottomNav />}
     </div>
   );

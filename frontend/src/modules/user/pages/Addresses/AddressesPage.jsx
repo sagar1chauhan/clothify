@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AccountLayout from '../../components/Profile/AccountLayout';
 import { MapPin, Search, X, Home, Briefcase, MapPin as MapPinIcon } from 'lucide-react';
+import { useLocation as useLocationContext } from '../../context/LocationContext';
 
 const AddressesPage = () => {
+    const { addresses, refreshAddresses } = useLocationContext();
     const [showForm, setShowForm] = useState(false);
-    const [addresses, setAddresses] = useState(() => {
-        const saved = localStorage.getItem('userAddresses');
-        return saved ? JSON.parse(saved) : [];
-    });
 
     const [newAddress, setNewAddress] = useState({
         name: '',
@@ -22,9 +20,10 @@ const AddressesPage = () => {
 
     const handleSave = (e) => {
         e.preventDefault();
-        const updated = [...addresses, { ...newAddress, id: Date.now() }];
-        setAddresses(updated);
+        const existing = JSON.parse(localStorage.getItem('userAddresses') || '[]');
+        const updated = [...existing, { ...newAddress, id: Date.now() }];
         localStorage.setItem('userAddresses', JSON.stringify(updated));
+        refreshAddresses();
         setShowForm(false);
         setNewAddress({ name: '', mobile: '', pincode: '', address: '', locality: '', city: '', state: '', type: 'Home' });
     };

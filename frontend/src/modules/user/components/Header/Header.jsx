@@ -1,26 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, MapPin, User, ShoppingBag, Menu, X, LayoutGrid, Compass, Heart, ChevronRight } from 'lucide-react';
+import { Search, MapPin, User, ShoppingCart, X, LayoutGrid, Compass, Heart, ChevronRight, ChevronDown } from 'lucide-react';
 import MegaMenu from './MegaMenu';
 import DiscoverModal from './DiscoverModal';
-import TryAndBuyModal from './TryAndBuyModal';
+import LocationModal from './LocationModal';
+import { useLocation as useLocationContext } from '../../context/LocationContext';
+
 import { categories } from '../../data';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCategory } from '../../context/CategoryContext';
 import { useAuth } from '../../context/AuthContext';
 
-const CLICK_COLLECT_PHRASES = ["Click", "Connect", "Collect"];
+
 
 const Header = () => {
     const { user } = useAuth();
     const { wishlistItems } = useWishlist();
     const { activeCategory, setActiveCategory, getCategoryColor } = useCategory();
+    const { activeAddress } = useLocationContext();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
     const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
-    const [isClickCollectOpen, setIsClickCollectOpen] = useState(false);
-    const [currentTextIndex, setCurrentTextIndex] = useState(0);
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+
 
     const { getCartCount, lastAddedItem } = useCart();
     const cartCount = getCartCount();
@@ -51,13 +54,8 @@ const Header = () => {
         };
         window.addEventListener('scroll', handleScroll, { passive: true });
 
-        const interval = setInterval(() => {
-            setCurrentTextIndex((prev) => (prev + 1) % CLICK_COLLECT_PHRASES.length);
-        }, 3000);
-
         return () => {
             window.removeEventListener('scroll', handleScroll);
-            clearInterval(interval);
         };
     }, [lastScrollY]);
 
@@ -97,45 +95,56 @@ const Header = () => {
     const currentBgColor = getCategoryColor(activeCategory);
 
     return (
-        <header className={`w-full sticky top-0 z-[1000] transition-all duration-300 transform ${isScrolled ? 'shadow-lg' : 'shadow-sm'} ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+        <header className={`w-full sticky top-0 z-[9999] transition-all duration-300 transform ${isScrolled ? 'shadow-lg' : 'shadow-sm'} ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
             {/* Top Colored Section */}
             <div
                 className={`relative z-[60] transition-all duration-500 ease-in-out ${isScrolled ? 'bg-white/80 backdrop-blur-xl border-b border-white/20' : ''}`}
                 style={{ backgroundColor: isScrolled ? 'transparent' : currentBgColor }}
             >
-                {/* Location Bar */}
-                <div className="px-4 py-1.5 flex justify-between items-center group no-underline hover:bg-white/5 transition-colors">
-                    <Link to="/addresses" className="flex items-center gap-3 no-underline">
-                        <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white font-black text-xl shadow-sm border border-white/10">
-                            60
+                {/* Location Bar / Address Bar - Myntra Style */}
+                <div
+                    onClick={() => setIsLocationModalOpen(true)}
+                    className={`px-4 py-2.5 flex justify-between items-center group cursor-pointer transition-colors border-b ${isScrolled ? 'bg-transparent border-white/5' : 'bg-white md:bg-transparent border-gray-100 md:border-white/5'}`}
+                >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-colors ${isScrolled ? 'bg-gray-100' : 'bg-gray-50 md:bg-white/20'}`}>
+                            <MapPin size={16} className={isScrolled ? 'text-black' : 'text-black md:text-white'} />
                         </div>
-                        <div className="flex flex-col">
-                            <span className={`font-black text-[15px] leading-tight transition-colors duration-500 ${isScrolled ? 'text-black' : 'text-white'}`}>
-                                Mins
+                        <div className="flex flex-col min-w-0">
+                            <span className={`text-[13px] font-black leading-tight flex items-center gap-2 ${isScrolled ? 'text-gray-900' : 'text-gray-900 md:text-white'}`}>
+                                {activeAddress ? activeAddress.name : 'Select Location'} <span className={`text-[10px] font-normal uppercase tracking-wider opacity-70 ${isScrolled ? 'text-gray-500' : 'text-gray-500 md:text-white'}`}>{activeAddress?.type}</span>
                             </span>
-                            <div className={`flex items-center gap-1 text-[12px] font-bold transition-colors duration-500 ${isScrolled ? 'text-gray-500' : 'text-white/90'}`}>
-                                <span>Current: Add Address</span>
-                                <span className="text-[14px] font-black group-hover:translate-x-1 transition-transform">›</span>
-                            </div>
+                            <span className={`text-[11px] font-medium truncate max-w-[200px] opacity-80 ${isScrolled ? 'text-gray-500' : 'text-gray-500 md:text-white'}`}>
+                                {activeAddress ? `${activeAddress.address}, ${activeAddress.city}` : 'Add an address to see delivery info'}
+                            </span>
                         </div>
-                    </Link>
-                    <div className="flex md:hidden items-center gap-3">
-                        <Link to="/wishlist" className="relative p-2">
-                            <Heart size={24} className={isScrolled ? 'text-black' : 'text-white'} />
-                            {wishlistItems.length > 0 && (
-                                <span className="absolute top-1 right-1 bg-red-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-white">
-                                    {wishlistItems.length}
-                                </span>
-                            )}
-                        </Link>
-                        <button className="p-1" onClick={() => setIsMenuOpen(true)}>
-                            <Menu size={28} className={isScrolled ? 'text-black' : 'text-white'} />
-                        </button>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <ChevronDown size={16} className={`transition-transform group-hover:rotate-180 ${isScrolled ? 'text-gray-400' : 'text-gray-400 md:text-white/70'}`} />
+                        {/* Mobile Right Icons (Wishlist & Cart) */}
+                        <div className="flex md:hidden items-center gap-2 pl-2 border-l border-gray-100">
+                            <Link to="/wishlist" onClick={(e) => e.stopPropagation()} className="relative p-1">
+                                <Heart size={20} className="text-black" />
+                                {wishlistItems.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white">
+                                        {wishlistItems.length}
+                                    </span>
+                                )}
+                            </Link>
+                            <Link to="/cart" onClick={(e) => e.stopPropagation()} className="relative p-1">
+                                <ShoppingCart size={20} className="text-black" />
+                                {cartCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-[#39ff14] text-black text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white">
+                                        {cartCount}
+                                    </span>
+                                )}
+                            </Link>
+                        </div>
                     </div>
                 </div>
 
                 {/* Search Bar - Visible on All Screens */}
-                <div className="px-4 pb-3 flex items-center gap-2 relative">
+                <div className="px-4 pb-3 pt-2 flex items-center gap-2 relative">
                     <div className="relative flex-1 group">
                         <input
                             type="text"
@@ -177,26 +186,7 @@ const Header = () => {
                             </div>
                         )}
                     </div>
-                    <button
-                        onClick={() => setIsClickCollectOpen(true)}
-                        className="bg-[#ffcc00] text-black font-black text-[13px] px-5 py-3.5 rounded-xl uppercase tracking-tighter whitespace-nowrap shadow-md active:scale-95 transition-all overflow-hidden h-[46px] flex flex-col items-center justify-center relative min-w-[110px]"
-                    >
-                        <div className="relative w-full h-full flex flex-col items-center">
-                            {CLICK_COLLECT_PHRASES.map((text, idx) => (
-                                <span
-                                    key={text}
-                                    className={`absolute transition-all duration-700 ease-in-out flex items-center justify-center w-full px-2 ${idx === currentTextIndex
-                                        ? 'top-0 opacity-100 blur-0 scale-100'
-                                        : idx < currentTextIndex
-                                            ? '-top-full opacity-0 blur-sm scale-90'
-                                            : 'top-full opacity-0 blur-sm scale-90'
-                                        }`}
-                                >
-                                    {text}
-                                </span>
-                            ))}
-                        </div>
-                    </button>
+
                 </div>
 
                 <div className="hidden md:flex flex-col">
@@ -230,7 +220,7 @@ const Header = () => {
                                 )}
                             </Link>
                             <Link to="/cart" className={`relative transition-colors ${isScrolled ? 'text-black hover:text-[#39ff14]' : 'text-white hover:text-[#39ff14]'}`}>
-                                <ShoppingBag size={22} />
+                                <ShoppingCart size={22} />
                                 {cartCount > 0 && (
                                     <span className="absolute -top-2 -right-2 bg-[#39ff14] text-black text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
                                         {cartCount}
@@ -271,24 +261,27 @@ const Header = () => {
                     className="relative z-[30] transition-colors duration-500 ease-in-out border-t border-white/10"
                     style={{ backgroundColor: currentBgColor }}
                 >
-                    <div className="flex overflow-x-auto scrollbar-hide gap-1 md:gap-3 px-3 md:px-6 pt-1.5 pb-0 items-end scroll-smooth snap-x snap-mandatory">
+                    <div className="flex overflow-x-auto scrollbar-hide gap-1 md:gap-3 px-3 md:px-6 pt-1 pb-0 items-end scroll-smooth snap-x snap-mandatory">
                         {categories.map((cat) => (
                             <button
                                 key={cat.id}
-                                className="flex flex-col items-center shrink-0 w-24 md:w-32 snap-center outline-none mx-1 group pt-2 pb-4"
-                                onClick={() => setActiveCategory(cat.name)}
+                                className="flex flex-col items-center shrink-0 w-20 md:w-28 snap-center outline-none mx-0.5 group py-1"
+                                onClick={() => {
+                                    setActiveCategory(cat.name);
+                                    navigate('/shop');
+                                }}
                             >
-                                {/* Outer Circle (The Background Highlight) */}
+                                {/* Outer Square (The Background Highlight) */}
                                 <div
-                                    className={`flex items-center justify-center rounded-full transition-all duration-500 ${activeCategory === cat.name
-                                        ? 'w-20 h-20 md:w-24 md:h-24 bg-white shadow-[0_15px_35px_rgba(0,0,0,0.2)] scale-110'
+                                    className={`flex items-center justify-center rounded-xl transition-all duration-500 ${activeCategory === cat.name
+                                        ? 'w-16 h-16 md:w-20 md:h-20 bg-white shadow-[0_10px_20px_rgba(0,0,0,0.15)]'
                                         : 'w-16 h-16 md:w-20 md:h-20 bg-transparent group-hover:bg-white/10'
                                         }`}
                                 >
-                                    {/* Inner Image Circle with Pading gap */}
+                                    {/* Inner Image Square with Padding gap */}
                                     <div
-                                        className={`rounded-full overflow-hidden transition-all duration-500 ${activeCategory === cat.name
-                                            ? 'w-16 h-16 md:w-20 md:h-20 border-2 border-gray-50 shadow-sm'
+                                        className={`rounded-xl overflow-hidden transition-all duration-500 ${activeCategory === cat.name
+                                            ? 'w-[58px] h-[58px] md:w-[74px] md:h-[74px] border-2 border-gray-50 shadow-sm'
                                             : 'w-14 h-14 md:w-18 md:h-18 border border-white/30'
                                             }`}
                                     >
@@ -300,9 +293,9 @@ const Header = () => {
                                     </div>
                                 </div>
 
-                                {/* Category Text - Just below the outer circle */}
+                                {/* Category Text - Just below the outer square */}
                                 <span
-                                    className={`mt-4 text-[10px] md:text-[11px] font-black text-center transition-all duration-500 uppercase tracking-widest ${activeCategory === cat.name
+                                    className={`mt-1 text-[10px] md:text-[11px] font-black text-center transition-all duration-500 uppercase tracking-widest ${activeCategory === cat.name
                                         ? 'text-white scale-110 drop-shadow-md'
                                         : 'text-white/60 group-hover:text-white'
                                         }`}
@@ -321,7 +314,7 @@ const Header = () => {
                 <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-white sticky top-0 z-10">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-black rounded-2xl flex items-center justify-center shadow-lg">
-                            <ShoppingBag size={20} className="text-[#ffcc00]" />
+                            <ShoppingCart size={20} className="text-[#ffcc00]" />
                         </div>
                         <div>
                             <h3 className="font-black text-xl uppercase tracking-tight leading-none">Menu</h3>
@@ -409,11 +402,13 @@ const Header = () => {
                 onClose={() => setIsDiscoverOpen(false)}
             />
 
-            {/* Click Collect Modal */}
-            <TryAndBuyModal
-                isOpen={isClickCollectOpen}
-                onClose={() => setIsClickCollectOpen(false)}
+            {/* Location Modal */}
+            <LocationModal
+                isOpen={isLocationModalOpen}
+                onClose={() => setIsLocationModalOpen(false)}
             />
+
+
             {/* Cart Toast Notification */}
             {lastAddedItem && (
                 <div className="fixed top-24 right-4 z-[5000] bg-black text-white px-6 py-4 rounded-[20px] shadow-2xl animate-fadeInRight flex items-center gap-4 min-w-[300px] border border-white/10">
@@ -421,9 +416,9 @@ const Header = () => {
                         <img src={lastAddedItem.image} alt="" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#39ff14] mb-1">Added to Bag</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#39ff14] mb-1">Added to Cart</p>
                         <h4 className="text-[13px] font-bold truncate max-w-[180px] mb-1">{lastAddedItem.name}</h4>
-                        <Link to="/cart" className="text-[11px] font-black uppercase text-[#ffcc00] hover:underline transition-all">View Bag</Link>
+                        <Link to="/cart" className="text-[11px] font-black uppercase text-[#ffcc00] hover:underline transition-all">View Cart</Link>
                     </div>
                     <button className="p-1 hover:bg-white/10 rounded-full transition-colors">
                         <X size={16} />

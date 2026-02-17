@@ -3,17 +3,21 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { products } from '../../data';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
-import { Filter, X, ChevronDown, ChevronUp, Star, Eye, ShoppingBag, Search, ArrowLeft, Heart, Share2, Check } from 'lucide-react';
+import { Filter, X, ChevronDown, ChevronUp, Star, Eye, ShoppingCart, Search, ArrowLeft, Heart, Share2, Check, MapPin } from 'lucide-react';
+import LocationModal from '../../components/Header/LocationModal';
+import { useLocation as useLocationContext } from '../../context/LocationContext';
 
 const ProductsPage = () => {
     const { toggleWishlist, isInWishlist, wishlistItems } = useWishlist();
-    const { addToCart } = useCart();
+    const { addToCart, getCartCount } = useCart();
+    const { activeAddress } = useLocationContext();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [isSortOpen, setIsSortOpen] = useState(false);
     const [isGenderOpen, setIsGenderOpen] = useState(false);
     const [isHeaderSearchOpen, setIsHeaderSearchOpen] = useState(false);
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
     // Active Filters State
     const [activeFilterTab, setActiveFilterTab] = useState('Brand');
@@ -85,7 +89,7 @@ const ProductsPage = () => {
                 result = result.filter(p => p.division.toLowerCase() === division.toLowerCase());
             }
             if (category) {
-                result = result.filter(p => p.category.toLowerCase() === category.toLowerCase());
+                result = result.filter(p => p.category.toLowerCase() === category.toLowerCase() || p.division.toLowerCase() === category.toLowerCase());
             }
         }
 
@@ -169,7 +173,7 @@ const ProductsPage = () => {
         <div className="bg-white min-h-screen pb-20 md:pb-0">
             {/* Top Scroller - Mobile Only */}
             <div className="md:hidden sticky top-0 bg-white z-40 border-b border-gray-100">
-                <div className="flex items-center gap-4 px-4 py-3">
+                <div className="flex items-center gap-4 px-4 py-3 border-b border-gray-100">
                     <button className="p-2 -ml-2 rounded-full hover:bg-gray-100" onClick={() => window.history.back()}>
                         <ArrowLeft size={20} />
                     </button>
@@ -203,11 +207,43 @@ const ProductsPage = () => {
                                 </span>
                             )}
                         </Link>
+                        <Link to="/cart" className="relative transition-colors">
+                            <ShoppingCart size={20} />
+                            {getCartCount() > 0 && (
+                                <span className="absolute -top-1.5 -right-1.5 bg-[#39ff14] text-black text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center">
+                                    {getCartCount()}
+                                </span>
+                            )}
+                        </Link>
                     </div>
+                </div>
+
+                {/* Address Bar - Moved Inside Sticky Header */}
+                <div
+                    onClick={() => setIsLocationModalOpen(true)}
+                    className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 cursor-pointer active:bg-gray-50 transition-colors"
+                >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <MapPin size={16} className="text-black shrink-0" />
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[12px] font-black leading-tight flex items-center gap-2 text-gray-900">
+                                {activeAddress ? activeAddress.name : 'Select Location'} <span className="text-[9px] font-normal uppercase tracking-wider text-gray-500">{activeAddress?.type}</span>
+                            </span>
+                            <span className="text-[10px] font-medium truncate max-w-[200px] text-gray-500">
+                                {activeAddress ? `${activeAddress.address}, ${activeAddress.city}` : 'Add an address to see delivery info'}
+                            </span>
+                        </div>
+                    </div>
+                    <ChevronDown size={14} className="text-gray-400" />
                 </div>
             </div>
 
-            <div className="container mx-auto px-4 py-8">
+            <LocationModal
+                isOpen={isLocationModalOpen}
+                onClose={() => setIsLocationModalOpen(false)}
+            />
+
+            <div className="container mx-auto px-4 py-8 pb-32 md:pb-8">
                 {/* Desktop Product Info */}
                 <div className="hidden md:block mb-8">
                     <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
@@ -341,24 +377,24 @@ const ProductsPage = () => {
                                         )}
 
                                         {/* Icons */}
-                                        <div className="absolute top-4 right-4 flex flex-col gap-2.5 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-500">
+                                        <div className="absolute top-3 left-3 flex px-2 py-2 gap-2 z-10">
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     addToCart({ ...product, selectedSize: product.size ? product.size[0] : 'M' });
                                                 }}
-                                                className="w-10 h-10 bg-white/90 backdrop-blur-md text-black rounded-xl flex items-center justify-center shadow-lg hover:bg-[#ffcc00] hover:scale-110 transition-all"
+                                                className="w-10 h-10 bg-[#ffcc00] text-black rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all"
                                             >
-                                                <ShoppingBag size={18} />
+                                                <ShoppingCart size={18} strokeWidth={3} />
                                             </button>
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     toggleWishlist(product);
                                                 }}
-                                                className={`w-10 h-10 bg-white/90 backdrop-blur-md rounded-xl flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-90 ${isInWishlist(product.id) ? 'bg-[#ffcc00] text-black' : 'text-black hover:bg-[#ffcc00]'}`}
+                                                className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-90 ${isInWishlist(product.id) ? 'bg-red-500 text-white' : 'bg-white text-black'}`}
                                             >
-                                                <Heart size={18} className={isInWishlist(product.id) ? 'fill-red-500 text-red-500' : ''} />
+                                                <Heart size={18} className={isInWishlist(product.id) ? 'fill-white' : ''} />
                                             </button>
                                         </div>
                                     </div>
@@ -394,8 +430,148 @@ const ProductsPage = () => {
                 </div>
             </div>
 
-            {/* Bottom Action Bar - Mobile Only */}
-            <div className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 z-50 flex h-16 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
+            {/* Gender Modal - Mobile */}
+            {
+                isGenderOpen && (
+                    <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm animate-fadeIn">
+                        <div className="absolute bottom-0 left-0 w-full bg-white rounded-t-[24px] overflow-hidden animate-slideUp">
+                            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+                                <h3 className="text-lg font-black uppercase tracking-tight">Select Gender</h3>
+                                <button onClick={() => setIsGenderOpen(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            <div className="p-5 space-y-2">
+                                {['All', 'Men', 'Women', 'Boys', 'Girls'].map(gender => (
+                                    <button
+                                        key={gender}
+                                        onClick={() => {
+                                            setSelectedGender(gender);
+                                            setIsGenderOpen(false);
+                                        }}
+                                        className={`w-full flex items-center justify-between p-4 rounded-xl font-bold uppercase tracking-wider transition-colors ${selectedGender === gender ? 'bg-black text-white' : 'bg-gray-50 text-gray-600'}`}
+                                    >
+                                        {gender}
+                                        {selectedGender === gender && <Check size={18} />}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Sort Modal - Mobile */}
+            {
+                isSortOpen && (
+                    <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm animate-fadeIn">
+                        <div className="absolute bottom-0 left-0 w-full bg-white rounded-t-[24px] overflow-hidden animate-slideUp">
+                            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+                                <h3 className="text-lg font-black uppercase tracking-tight">Sort By</h3>
+                                <button onClick={() => setIsSortOpen(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            <div className="p-5 space-y-2">
+                                {['Price: Low to High', 'Price: High to Low', 'Discount', 'Popularity', 'New Arrivals'].map(option => (
+                                    <button
+                                        key={option}
+                                        onClick={() => {
+                                            setSelectedSort(option);
+                                            setIsSortOpen(false);
+                                        }}
+                                        className={`w-full text-left p-4 rounded-xl font-bold transition-colors ${selectedSort === option ? 'bg-black text-white' : 'bg-gray-50 text-gray-600'}`}
+                                    >
+                                        {option}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Filter Modal - Mobile */}
+            {
+                isFilterOpen && (
+                    <div className="fixed inset-0 z-[100] bg-white animate-slideUp flex flex-col">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                            <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                                <Filter size={20} /> Filters
+                            </h3>
+                            <button onClick={() => setIsFilterOpen(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-5 pb-24">
+                            <div className="space-y-2">
+                                <FilterSection title="Brand" id="brand">
+                                    <div className="space-y-4 pt-2">
+                                        {brands.map(brand => (
+                                            <label key={brand} className="flex items-center gap-3 cursor-pointer group">
+                                                <input
+                                                    type="checkbox"
+                                                    className="hidden"
+                                                    checked={selectedBrands.includes(brand)}
+                                                    onChange={() => handleSelectBrand(brand)}
+                                                />
+                                                <div className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-all ${selectedBrands.includes(brand) ? 'bg-black border-black' : 'border-gray-300'
+                                                    }`}>
+                                                    {selectedBrands.includes(brand) && <Check size={12} className="text-white" strokeWidth={4} />}
+                                                </div>
+                                                <span className={`text-[14px] font-bold transition-colors ${selectedBrands.includes(brand) ? 'text-black' : 'text-gray-500'
+                                                    }`}>{brand}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </FilterSection>
+
+                                <FilterSection title="Sub Category" id="subCategory">
+                                    <div className="space-y-3 pt-2">
+                                        {subCategories.map(sub => (
+                                            <div key={sub} className="text-[14px] font-bold text-gray-500 hover:text-black cursor-pointer">{sub}</div>
+                                        ))}
+                                    </div>
+                                </FilterSection>
+
+                                <FilterSection title="Size" id="size">
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {sizes.map(size => (
+                                            <button key={size} className="border border-gray-200 py-2.5 text-[12px] font-black rounded-lg hover:border-black hover:bg-black hover:text-white transition-all">
+                                                {size}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </FilterSection>
+
+                                {/* Other sections as placeholders or implemented similarly */}
+                                <FilterSection title="Product Type" id="productType" />
+                                <FilterSection title="Trend" id="trend" />
+                                <FilterSection title="Fit" id="fit" />
+                                <FilterSection title="Fabric" id="fabric" />
+                                <FilterSection title="Pattern" id="pattern" />
+                            </div>
+                        </div>
+
+                        <div className="border-t border-gray-100 p-4 flex gap-4 bg-white sticky bottom-0">
+                            <button
+                                onClick={clearFilters}
+                                className="flex-1 py-3.5 border border-gray-200 rounded-xl text-[12px] font-black uppercase tracking-wider text-gray-600"
+                            >
+                                Reset
+                            </button>
+                            <button
+                                onClick={() => setIsFilterOpen(false)}
+                                className="flex-1 py-3.5 bg-black text-white rounded-xl text-[12px] font-black uppercase tracking-wider"
+                            >
+                                Apply filters
+                            </button>
+                        </div>
+                    </div>
+                )
+            }
+            <div className="md:hidden sticky bottom-0 left-0 w-full bg-white border-t border-gray-100 z-50 flex h-16 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
                 <button
                     onClick={() => setIsGenderOpen(true)}
                     className="flex-1 flex items-center justify-center gap-2 text-[13px] font-black uppercase tracking-wider border-r border-gray-100"
@@ -415,7 +591,7 @@ const ProductsPage = () => {
                     Filter
                 </button>
             </div>
-        </div >
+        </div>
     );
 };
 
