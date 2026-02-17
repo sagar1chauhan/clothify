@@ -171,46 +171,47 @@ const ProductsPage = () => {
 
     return (
         <div className="bg-white min-h-screen pb-20 md:pb-0">
-            {/* Top Scroller - Mobile Only */}
-            <div className="md:hidden sticky top-0 bg-white z-40 border-b border-gray-100">
-                <div className="flex items-center gap-4 px-4 py-3 border-b border-gray-100">
-                    <button className="p-2 -ml-2 rounded-full hover:bg-gray-100" onClick={() => window.history.back()}>
-                        <ArrowLeft size={20} />
+            {/* Universal Header - Mimics Mobile View for consistency */}
+            <div className="sticky top-0 bg-white z-[60] border-b border-gray-100 shadow-sm">
+                <div className="container mx-auto flex items-center gap-4 px-4 py-3">
+                    <button className="p-2 -ml-2 rounded-full hover:bg-gray-50 transition-colors shrink-0" onClick={() => window.history.back()}>
+                        <ArrowLeft size={22} className="text-black" />
                     </button>
-                    <div className="flex-1">
+                    <div className="flex-1 flex flex-col items-center min-w-0">
                         {isHeaderSearchOpen ? (
                             <input
                                 autoFocus
                                 type="text"
                                 placeholder="Search products..."
-                                className="w-full text-sm font-bold border-none outline-none py-1"
+                                className="w-full text-center text-sm font-bold border-none outline-none py-1 bg-gray-50 rounded-lg px-4"
                                 value={headerSearchValue}
                                 onChange={(e) => setHeaderSearchValue(e.target.value)}
                             />
                         ) : (
-                            <>
-                                <h1 className="text-base font-black truncate leading-tight uppercase tracking-tight">{selectedBrands[0] || subCategoryFromUrl || category}</h1>
-                                <p className="text-[11px] font-bold text-gray-400">{filteredProducts.length} Items</p>
-                            </>
+                            <div className="text-center">
+                                <h1 className="text-sm md:text-base font-black truncate leading-tight uppercase tracking-tight">{selectedBrands[0] || subCategoryFromUrl || category}</h1>
+                                <p className="text-[10px] md:text-[11px] font-bold text-gray-400">{filteredProducts.length} Items</p>
+                            </div>
                         )}
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 md:gap-4 shrink-0">
                         <Search
                             size={20}
+                            className="text-gray-600 cursor-pointer hidden md:block"
                             onClick={() => setIsHeaderSearchOpen(!isHeaderSearchOpen)}
                         />
                         <Link to="/wishlist" className="relative transition-colors">
-                            <Heart size={20} />
+                            <Heart size={20} className="text-gray-700" />
                             {wishlistItems.length > 0 && (
-                                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center">
+                                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white">
                                     {wishlistItems.length}
                                 </span>
                             )}
                         </Link>
                         <Link to="/cart" className="relative transition-colors">
-                            <ShoppingCart size={20} />
+                            <ShoppingCart size={20} className="text-gray-700" />
                             {getCartCount() > 0 && (
-                                <span className="absolute -top-1.5 -right-1.5 bg-[#39ff14] text-black text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center">
+                                <span className="absolute -top-1.5 -right-1.5 bg-[#39ff14] text-black text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white">
                                     {getCartCount()}
                                 </span>
                             )}
@@ -218,23 +219,29 @@ const ProductsPage = () => {
                     </div>
                 </div>
 
-                {/* Address Bar - Moved Inside Sticky Header */}
-                <div
-                    onClick={() => setIsLocationModalOpen(true)}
-                    className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 cursor-pointer active:bg-gray-50 transition-colors"
-                >
-                    <div className="flex items-center gap-3 overflow-hidden">
-                        <MapPin size={16} className="text-black shrink-0" />
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-[12px] font-black leading-tight flex items-center gap-2 text-gray-900">
-                                {activeAddress ? activeAddress.name : 'Select Location'} <span className="text-[9px] font-normal uppercase tracking-wider text-gray-500">{activeAddress?.type}</span>
-                            </span>
-                            <span className="text-[10px] font-medium truncate max-w-[200px] text-gray-500">
-                                {activeAddress ? `${activeAddress.address}, ${activeAddress.city}` : 'Add an address to see delivery info'}
-                            </span>
+                <div className="border-t border-gray-50">
+                    <div
+                        onClick={() => setIsLocationModalOpen(true)}
+                        className="container mx-auto flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-gray-50 transition-all font-bold"
+                    >
+                        <div className="flex items-center gap-3 overflow-hidden">
+                            <div className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
+                                <MapPin size={14} className="text-black" />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-[11px] font-black leading-tight flex items-center gap-2 text-gray-900 uppercase tracking-tight">
+                                    {activeAddress ? activeAddress.name : 'Select Location'}
+                                    {activeAddress?.type && (
+                                        <span className="text-[8px] font-black bg-black text-white px-1.5 py-0.5 rounded uppercase tracking-tighter">{activeAddress.type}</span>
+                                    )}
+                                </span>
+                                <span className="text-[10px] font-bold truncate max-w-[200px] md:max-w-none text-gray-400">
+                                    {activeAddress ? `${activeAddress.address}, ${activeAddress.city}` : 'Add an address to see delivery info'}
+                                </span>
+                            </div>
                         </div>
+                        <ChevronDown size={14} className="text-gray-400" />
                     </div>
-                    <ChevronDown size={14} className="text-gray-400" />
                 </div>
             </div>
 
@@ -244,15 +251,13 @@ const ProductsPage = () => {
             />
 
             <div className="container mx-auto px-4 py-8 pb-32 md:pb-8">
-                {/* Desktop Product Info */}
+                {/* Desktop Breadcrumbs & Sorting - Refined */}
                 <div className="hidden md:block mb-8">
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        Home <span className="scale-75">›</span> {selectedBrands[0] || division} <span className="scale-75">›</span> {category}
-                    </div>
-                    <div className="flex items-baseline justify-between">
-                        <div className="flex items-baseline gap-4">
-                            <h1 className="text-2xl font-black uppercase tracking-tight">{selectedBrands[0] || subCategoryFromUrl || category}</h1>
-                            <span className="text-gray-400 font-bold text-sm italic">{filteredProducts.length} items</span>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                            Home <span className="scale-75 text-gray-300">›</span> {selectedBrands[0] || division} <span className="scale-75 text-gray-300">›</span> {category}
+                            <span className="ml-4 text-gray-300 font-normal">|</span>
+                            <span className="ml-4 text-gray-400 font-black tracking-normal italic">{filteredProducts.length} items found</span>
                         </div>
 
                         <div className="flex items-center gap-4">

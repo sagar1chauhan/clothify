@@ -84,49 +84,57 @@ const ProductDetailsPage = () => {
 
     return (
         <div className="bg-[#fafafa] min-h-screen pb-20">
-            {/* Mobile Header */}
-            <div className="md:hidden sticky top-0 bg-white/80 backdrop-blur-md z-50 flex items-center justify-between px-4 py-4 border-b border-gray-100">
-                <button onClick={() => navigate(-1)} className="p-2 -ml-2">
-                    <ChevronLeft size={24} />
-                </button>
-                <div className="flex-1 flex justify-center">
-                    <h1 className="text-sm font-black uppercase tracking-widest truncate max-w-[150px]">{product.brand}</h1>
-                </div>
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => toggleWishlist(product)}
-                        className="relative transition-colors"
-                    >
-                        <Heart size={20} className={isInWishlist(product?.id) ? 'fill-red-500 text-red-500' : 'text-black'} />
+            {/* Universal Header - Mimics Mobile View for consistency */}
+            <div className="sticky top-0 bg-white/95 backdrop-blur-md z-[100] border-b border-gray-100 shadow-sm">
+                <div className="container mx-auto flex items-center justify-between px-4 py-4">
+                    <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-colors shrink-0">
+                        <ChevronLeft size={24} className="text-black" />
                     </button>
-                    <Link to="/cart" className="relative">
-                        <ShoppingCart size={20} />
-                        {cartCount > 0 && (
-                            <span className="absolute -top-1.5 -right-1.5 bg-[#39ff14] text-black text-[9px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white">
-                                {cartCount}
-                            </span>
-                        )}
-                    </Link>
-                </div>
-            </div>
-
-            {/* Address Bar - New Row */}
-            <div
-                onClick={() => setIsLocationModalOpen(true)}
-                className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 cursor-pointer active:bg-gray-50 transition-colors"
-            >
-                <div className="flex items-center gap-3 overflow-hidden">
-                    <MapPin size={16} className="text-black shrink-0" />
-                    <div className="flex flex-col min-w-0">
-                        <span className="text-[12px] font-black leading-tight flex items-center gap-2 text-gray-900">
-                            {activeAddress ? activeAddress.name : 'Select Location'} <span className="text-[9px] font-normal uppercase tracking-wider text-gray-500">{activeAddress?.type}</span>
-                        </span>
-                        <span className="text-[10px] font-medium truncate max-w-[200px] text-gray-500">
-                            {activeAddress ? `${activeAddress.address}, ${activeAddress.city}` : 'Add an address to see delivery info'}
-                        </span>
+                    <div className="flex-1 flex justify-center">
+                        <h1 className="text-sm font-black uppercase tracking-widest truncate max-w-[150px]">{product.brand}</h1>
+                    </div>
+                    <div className="flex items-center gap-3 md:gap-4 shrink-0">
+                        <button
+                            onClick={() => toggleWishlist(product)}
+                            className="relative transition-colors p-1"
+                        >
+                            <Heart size={20} className={isInWishlist(product?.id) ? 'fill-red-500 text-red-500' : 'text-gray-700'} />
+                        </button>
+                        <Link to="/cart" className="relative p-1">
+                            <ShoppingCart size={20} className="text-gray-700" />
+                            {cartCount > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-[#39ff14] text-black text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white">
+                                    {cartCount}
+                                </span>
+                            )}
+                        </Link>
                     </div>
                 </div>
-                <ChevronDown size={14} className="text-gray-400" />
+
+                <div className="border-t border-gray-50">
+                    <div
+                        onClick={() => setIsLocationModalOpen(true)}
+                        className="container mx-auto flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-gray-50 transition-all font-bold"
+                    >
+                        <div className="flex items-center gap-3 overflow-hidden">
+                            <div className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
+                                <MapPin size={14} className="text-black" />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-[11px] font-black leading-tight flex items-center gap-2 text-gray-900 uppercase tracking-tight">
+                                    {activeAddress ? activeAddress.name : 'Select Location'}
+                                    {activeAddress?.type && (
+                                        <span className="text-[8px] font-black bg-black text-white px-1.5 py-0.5 rounded uppercase tracking-tighter">{activeAddress.type}</span>
+                                    )}
+                                </span>
+                                <span className="text-[10px] font-bold truncate max-w-[200px] md:max-w-none text-gray-400">
+                                    {activeAddress ? `${activeAddress.address}, ${activeAddress.city}` : 'Add an address to see delivery info'}
+                                </span>
+                            </div>
+                        </div>
+                        <ChevronDown size={14} className="text-gray-400" />
+                    </div>
+                </div>
             </div>
 
             <LocationModal
