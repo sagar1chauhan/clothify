@@ -38,15 +38,11 @@ const Header = () => {
         const handleScroll = () => {
             const currentScrollY = window.scrollY;
 
-            if (currentScrollY < 10) {
-                // At the very top - always show header
+            // Only show header when at the very top of the page
+            if (currentScrollY < 30) {
                 setIsVisible(true);
-            } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
-                // Scrolling Down - hide header
+            } else {
                 setIsVisible(false);
-            } else if (currentScrollY < lastScrollY) {
-                // Scrolling Up - show header for navigation
-                setIsVisible(true);
             }
 
             setIsScrolled(currentScrollY > 20);
@@ -261,7 +257,7 @@ const Header = () => {
                     className="relative z-[30] transition-colors duration-500 ease-in-out border-t border-white/10"
                     style={{ backgroundColor: currentBgColor }}
                 >
-                    <div className="flex overflow-x-auto scrollbar-hide gap-1 md:gap-3 px-3 md:px-6 pt-1 pb-0 items-end scroll-smooth snap-x snap-mandatory">
+                    <div className="flex overflow-x-auto scrollbar-hide gap-1 md:gap-3 px-3 md:px-6 pt-1 pb-2 items-start scroll-smooth snap-x snap-mandatory">
                         {categories.map((cat) => (
                             <button
                                 key={cat.id}

@@ -25,15 +25,27 @@ L.Marker.prototype.options.icon = DefaultIcon;
 const REVERSE_GEOCODE_URL = 'https://nominatim.openstreetmap.org/reverse?format=json';
 
 const LocationMarker = ({ position, setPosition, setAddress }) => {
+    const markerRef = React.useRef(null);
     const map = useMapEvents({
         click(e) {
             setPosition(e.latlng);
             fetchAddress(e.latlng.lat, e.latlng.lng, setAddress);
-        },
-        dragend: (e) => {
-            // Handle drag if needed, simpler to just click/tap for now
         }
     });
+
+    const eventHandlers = React.useMemo(
+        () => ({
+            dragend() {
+                const marker = markerRef.current;
+                if (marker != null) {
+                    const newPos = marker.getLatLng();
+                    setPosition(newPos);
+                    fetchAddress(newPos.lat, newPos.lng, setAddress);
+                }
+            },
+        }),
+        [setPosition, setAddress],
+    );
 
     useEffect(() => {
         if (position) {
@@ -42,7 +54,12 @@ const LocationMarker = ({ position, setPosition, setAddress }) => {
     }, [position, map]);
 
     return position === null ? null : (
-        <Marker position={position}></Marker>
+        <Marker
+            draggable={true}
+            eventHandlers={eventHandlers}
+            position={position}
+            ref={markerRef}
+        />
     );
 };
 
@@ -51,13 +68,13 @@ const fetchAddress = async (lat, lng, setAddress) => {
         const response = await fetch(`${REVERSE_GEOCODE_URL}&lat=${lat}&lon=${lng}`);
         const data = await response.json();
         if (data && data.display_name) {
-            // Parse address components for better display if needed
             const addr = data.address || {};
             setAddress({
                 formatted: data.display_name,
                 pincode: addr.postcode || '',
                 city: addr.city || addr.town || addr.village || '',
                 state: addr.state || '',
+                locality: addr.suburb || addr.neighbourhood || addr.road || '',
                 raw: data
             });
         }
@@ -71,6 +88,7 @@ const LocationModal = ({ isOpen, onClose }) => {
     const { addresses, activeAddress, updateActiveAddress, refreshAddresses } = useLocationContext();
     const { user } = useAuth();
     const [pincode, setPincode] = useState('');
+    const [pincodeStatus, setPincodeStatus] = useState(null); // 'checking' | 'success' | 'error'
     const [selectedAddressId, setSelectedAddressId] = useState(activeAddress?.id || null);
 
     // Map State
@@ -84,6 +102,7 @@ const LocationModal = ({ isOpen, onClose }) => {
         if (isOpen) {
             refreshAddresses();
             setView('list'); // Reset view on open
+            setPincodeStatus(null);
         }
     }, [isOpen, refreshAddresses]);
 
@@ -99,31 +118,40 @@ const LocationModal = ({ isOpen, onClose }) => {
         navigate('/addresses');
     };
 
+    const handleCheckPincode = () => {
+        if (pincode.length !== 6) return;
+        setPincodeStatus('checking');
+        // Simple mock check
+        setTimeout(() => {
+            if (pincode.startsWith('45')) {
+                setPincodeStatus('success');
+            } else {
+                setPincodeStatus('error');
+            }
+        }, 1000);
+    };
+
     const handleConfirm = () => {
         if (view === 'map' && fetchedAddress) {
-            // If in map view, we add this as a new temporary address or navigate to add address with prefilled data
-            // For now, let's assume we want to use this location immediately
             const newAddress = {
                 id: Date.now(),
-                name: "Current Location",
+                name: fetchedAddress.locality || "Current Location",
                 type: "Current",
-                address: fetchedAddress.formatted.split(',')[0], // Simple logic
+                address: fetchedAddress.formatted.split(',')[0],
                 city: fetchedAddress.city,
                 state: fetchedAddress.state,
                 pincode: fetchedAddress.pincode,
-                mobile: user?.mobile || "", // Assuming user context is available or empty
+                mobile: user?.mobile || "",
                 isCurrentLocation: true
             };
 
-            // Add to addresses (or just set as active without saving to DB/LocalStorage - depending on requirements)
-            // Let's add to addresses list in context/local storage to persist it
             const existingAddresses = JSON.parse(localStorage.getItem('userAddresses') || '[]');
             const updatedAddresses = [newAddress, ...existingAddresses];
             localStorage.setItem('userAddresses', JSON.stringify(updatedAddresses));
 
             updateActiveAddress(newAddress);
             onClose();
-            refreshAddresses(); // Refresh list 
+            refreshAddresses();
         } else {
             const selected = addresses.find(a => a.id === selectedAddressId);
             if (selected) {
@@ -186,18 +214,39 @@ const LocationModal = ({ isOpen, onClose }) => {
                             {/* Enter Pincode Section */}
                             <div className="bg-white p-4 rounded-[20px] shadow-sm border border-gray-100">
                                 <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-3 block">Enter Pincode</label>
-                                <div className="flex gap-3">
-                                    <input
-                                        type="text"
-                                        placeholder="e.g. 453331"
-                                        className="w-[180px] bg-gray-50 border border-transparent focus:bg-white focus:border-black rounded-xl px-4 py-3 text-[14px] font-bold outline-none transition-all placeholder:text-gray-400 placeholder:font-medium"
-                                        value={pincode}
-                                        onChange={(e) => setPincode(e.target.value)}
-                                        maxLength={6}
-                                    />
-                                    <button className="w-[100px] bg-black text-[#39ff14] rounded-xl font-black uppercase text-[12px] tracking-widest hover:bg-gray-900 active:scale-95 transition-all">
-                                        Check
-                                    </button>
+                                <div className="space-y-3">
+                                    <div className="flex gap-3">
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. 453331"
+                                            className="w-[180px] bg-gray-50 border border-transparent focus:bg-white focus:border-black rounded-xl px-4 py-3 text-[14px] font-bold outline-none transition-all placeholder:text-gray-400 placeholder:font-medium"
+                                            value={pincode}
+                                            onChange={(e) => {
+                                                setPincode(e.target.value);
+                                                setPincodeStatus(null);
+                                            }}
+                                            maxLength={6}
+                                        />
+                                        <button
+                                            onClick={handleCheckPincode}
+                                            disabled={pincodeStatus === 'checking' || pincode.length !== 6}
+                                            className="w-[100px] bg-black text-[#39ff14] rounded-xl font-black uppercase text-[12px] tracking-widest hover:bg-gray-900 active:scale-95 transition-all disabled:bg-gray-100 disabled:text-gray-400"
+                                        >
+                                            {pincodeStatus === 'checking' ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Check'}
+                                        </button>
+                                    </div>
+                                    {pincodeStatus === 'success' && (
+                                        <div className="flex items-center gap-2 text-green-600 animate-fadeInUp">
+                                            <CheckCircle2 size={14} />
+                                            <span className="text-[11px] font-bold uppercase tracking-tight">Delivery Available in this area</span>
+                                        </div>
+                                    )}
+                                    {pincodeStatus === 'error' && (
+                                        <div className="flex items-center gap-2 text-red-500 animate-fadeInUp">
+                                            <X size={14} />
+                                            <span className="text-[11px] font-bold uppercase tracking-tight">Currently not delivering to this pincode</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -291,6 +340,17 @@ const LocationModal = ({ isOpen, onClose }) => {
                                         />
                                     </MapContainer>
                                 )}
+
+                                {/* Map Overlay Controls */}
+                                <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
+                                    <button
+                                        onClick={handleUseCurrentLocation}
+                                        className="w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center text-black hover:bg-gray-50 active:scale-95 transition-all"
+                                        title="Recenter to my location"
+                                    >
+                                        <MapPin size={20} className="text-red-500" />
+                                    </button>
+                                </div>
 
                                 {/* Info Overlay on Map */}
                                 <div className="absolute bottom-4 left-4 right-4 bg-white p-4 rounded-2xl shadow-lg z-[1000] border border-gray-100">
