@@ -6,7 +6,7 @@ import ExportButton from '../../../admin/components/ExportButton';
 import AnimatedSelect from '../../../admin/components/AnimatedSelect';
 import { formatPrice } from '../../../../shared/utils/helpers';
 import { useVendorAuthStore } from '../../store/vendorAuthStore';
-import { useOrderStore } from '../../store/orderStore';
+import { useOrderStore } from '../../../../shared/store/orderStore';
 
 const SalesReport = () => {
   const { vendor } = useVendorAuthStore();
@@ -119,8 +119,8 @@ const SalesReport = () => {
       sortable: true,
       render: (value) => (
         <span className={`px-2 py-1 rounded text-xs font-medium ${value === 'delivered' ? 'bg-green-100 text-green-800' :
-            value === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-              'bg-gray-100 text-gray-800'
+          value === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+            'bg-gray-100 text-gray-800'
           }`}>
           {value}
         </span>

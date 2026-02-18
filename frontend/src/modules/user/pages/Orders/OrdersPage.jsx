@@ -5,7 +5,16 @@ import { useNavigate } from 'react-router-dom';
 
 const OrdersPage = () => {
     const navigate = useNavigate();
-    const orders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+
+    // Get local user orders and master admin orders
+    const localUserOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+    const adminOrders = JSON.parse(localStorage.getItem('admin-orders') || '[]');
+
+    // Merge to get latest status
+    const orders = localUserOrders.map(userOrder => {
+        const adminOrder = adminOrders.find(ao => ao.id === userOrder.id);
+        return adminOrder ? { ...userOrder, status: adminOrder.status } : userOrder;
+    });
 
     return (
         <AccountLayout>

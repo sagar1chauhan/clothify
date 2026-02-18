@@ -66,6 +66,24 @@ const PaymentPage = () => {
             const existingOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
             localStorage.setItem('userOrders', JSON.stringify([orderData, ...existingOrders]));
 
+            // Sync with Admin Dashboard
+            const adminOrders = JSON.parse(localStorage.getItem('admin-orders') || '[]');
+
+            const adminOrderData = {
+                ...orderData,
+                customer: {
+                    name: selectedAddress?.name || user?.name || 'Guest User',
+                    email: user?.email || 'guest@example.com',
+                    phone: selectedAddress?.mobile
+                },
+                shippingAddress: selectedAddress,
+                status: 'pending',
+                paymentStatus: paymentMethod.startsWith('cod') ? 'pending' : 'paid',
+                paymentMethod: paymentMethod
+            };
+
+            localStorage.setItem('admin-orders', JSON.stringify([adminOrderData, ...adminOrders]));
+
             clearCart();
             setIsProcessing(false);
             navigate('/orders');

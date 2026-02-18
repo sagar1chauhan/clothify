@@ -9,9 +9,16 @@ const OrderDetailsPage = () => {
     const [order, setOrder] = useState(null);
 
     useEffect(() => {
-        const orders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-        // Handle potentially different ID formats (string vs number)
-        const foundOrder = orders.find(o => String(o.id) === String(orderId));
+        // Check admin-orders first for latest status updates
+        const adminOrders = JSON.parse(localStorage.getItem('admin-orders') || '[]');
+        let foundOrder = adminOrders.find(o => String(o.id) === String(orderId));
+
+        // Fallback to local user orders if not found in admin list (edge case)
+        if (!foundOrder) {
+            const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+            foundOrder = userOrders.find(o => String(o.id) === String(orderId));
+        }
+
         setOrder(foundOrder);
     }, [orderId]);
 

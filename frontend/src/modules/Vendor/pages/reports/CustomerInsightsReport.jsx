@@ -5,7 +5,7 @@ import DataTable from '../../../admin/components/DataTable';
 import ExportButton from '../../../admin/components/ExportButton';
 import { formatPrice } from '../../../../shared/utils/helpers';
 import { useVendorAuthStore } from '../../store/vendorAuthStore';
-import { useOrderStore } from '../../store/orderStore';
+import { useOrderStore } from '../../../../shared/store/orderStore';
 
 const CustomerInsightsReport = () => {
   const { vendor } = useVendorAuthStore();

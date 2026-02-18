@@ -39,7 +39,7 @@ const CategoryOrder = () => {
     }));
 
     // In a real app, you would save this to the backend
-    localStorage.setItem('categories', JSON.stringify(updatedCategories));
+    localStorage.setItem('admin-categories', JSON.stringify(updatedCategories));
     toast.success('Category order saved successfully');
   };
 

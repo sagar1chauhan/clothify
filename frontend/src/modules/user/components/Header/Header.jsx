@@ -7,6 +7,7 @@ import LocationModal from './LocationModal';
 import { useLocation as useLocationContext } from '../../context/LocationContext';
 
 import { categories } from '../../data';
+import { useCategoryStore } from '../../../../shared/store/categoryStore';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCategory } from '../../context/CategoryContext';
@@ -57,6 +58,15 @@ const Header = () => {
         setSearchQuery('');
         setSearchSuggestions([]);
     };
+
+    // Get categories from store
+    const { categories: storeCategories, initialize } = useCategoryStore();
+    useEffect(() => {
+        initialize();
+    }, []);
+
+    // Use store categories if available, otherwise fallback to static (though store should have initial data)
+    const displayCategories = storeCategories.length > 0 ? storeCategories.filter(c => c.isActive) : categories;
 
     // Only show categories on Home and Shop pages
     const showCategories = location.pathname === '/' || location.pathname === '/shop';
@@ -228,7 +238,7 @@ const Header = () => {
                     style={{ backgroundColor: currentBgColor }}
                 >
                     <div className="flex overflow-x-auto scrollbar-hide gap-1 md:gap-3 px-3 md:px-6 pt-1 pb-2 items-start scroll-smooth snap-x snap-mandatory">
-                        {categories.map((cat) => (
+                        {displayCategories.map((cat) => (
                             <button
                                 key={cat.id}
                                 className="flex flex-col items-center shrink-0 w-20 md:w-28 snap-center outline-none mx-0.5 group py-1"
@@ -298,7 +308,7 @@ const Header = () => {
                 {/* Categories List */}
                 <div className="flex-1 overflow-y-auto bg-white py-2 px-4 shadow-inner">
                     <div className="space-y-1 pb-10">
-                        {categories.map((cat) => (
+                        {displayCategories.map((cat) => (
                             <div key={cat.id} className="group">
                                 <button
                                     className="w-full flex items-center gap-3 py-3 px-1 active:bg-gray-50 rounded-xl transition-all duration-200 text-left outline-none"
