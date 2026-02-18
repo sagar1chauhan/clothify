@@ -337,7 +337,7 @@ const ReturnRequestDetail = () => {
                       className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
                       onError={(e) => {
                         e.target.src =
-                          "https://via.placeholder.com/100x100?text=Product";
+                          "https://placehold.co/100x100?text=Product";
                       }}
                     />
                   )}

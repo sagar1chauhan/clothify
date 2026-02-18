@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { 
-  FiArrowLeft, 
-  FiCheck, 
-  FiX, 
-  FiPhone, 
+import {
+  FiArrowLeft,
+  FiCheck,
+  FiX,
+  FiPhone,
   FiMail,
   FiPackage,
   FiCalendar,
@@ -32,7 +32,7 @@ const ReturnRequestDetail = () => {
     const savedRequests = localStorage.getItem('admin-return-requests');
     const requests = savedRequests ? JSON.parse(savedRequests) : mockReturnRequests;
     const foundRequest = requests.find((r) => r.id === id);
-    
+
     if (foundRequest) {
       setReturnRequest(foundRequest);
       setStatus(foundRequest.status);
@@ -45,7 +45,7 @@ const ReturnRequestDetail = () => {
   const handleStatusUpdate = (newStatus, action = '') => {
     const savedRequests = localStorage.getItem('admin-return-requests');
     const requests = savedRequests ? JSON.parse(savedRequests) : mockReturnRequests;
-    
+
     const updatedRequests = requests.map((request) => {
       if (request.id === id) {
         const updated = {
@@ -53,7 +53,7 @@ const ReturnRequestDetail = () => {
           status: newStatus,
           updatedAt: new Date().toISOString(),
         };
-        
+
         if (newStatus === 'approved' && action === 'approve') {
           updated.refundStatus = 'pending';
         } else if (newStatus === 'completed' && action === 'process-refund') {
@@ -67,24 +67,24 @@ const ReturnRequestDetail = () => {
             updated.refundStatus = 'pending';
           }
         }
-        
+
         return updated;
       }
       return request;
     });
-    
+
     localStorage.setItem('admin-return-requests', JSON.stringify(updatedRequests));
     const updatedRequest = updatedRequests.find((r) => r.id === id);
     setReturnRequest(updatedRequest);
     setStatus(updatedRequest.status);
     setIsEditing(false);
-    
+
     const statusMessages = {
       approve: 'Return request approved',
       reject: 'Return request rejected',
       'process-refund': 'Refund processed successfully',
     };
-    
+
     toast.success(statusMessages[action] || 'Status updated successfully');
   };
 
@@ -279,7 +279,7 @@ const ReturnRequestDetail = () => {
                       alt={item.name || 'Product'}
                       className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
                       onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/100x100?text=Product';
+                        e.target.src = 'https://placehold.co/100x100?text=Product';
                       }}
                     />
                   )}

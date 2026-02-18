@@ -109,8 +109,8 @@ const StockManagement = () => {
           newQuantity === 0
             ? "out_of_stock"
             : newQuantity <= lowStockThreshold
-            ? "low_stock"
-            : "in_stock";
+              ? "low_stock"
+              : "in_stock";
         return {
           ...p,
           stockQuantity: parseInt(newQuantity),
@@ -159,7 +159,7 @@ const StockManagement = () => {
             alt={value}
             className="w-10 h-10 object-cover rounded-lg"
             onError={(e) => {
-              e.target.src = "https://via.placeholder.com/50x50?text=Product";
+              e.target.src = "https://placehold.co/50x50?text=Product";
             }}
           />
           <span className="font-medium">{value}</span>
@@ -190,8 +190,8 @@ const StockManagement = () => {
             value === "in_stock"
               ? "success"
               : value === "low_stock"
-              ? "warning"
-              : "error"
+                ? "warning"
+                : "error"
           }>
           {value?.replace("_", " ").toUpperCase() || "N/A"}
         </Badge>
@@ -416,8 +416,8 @@ const StockUpdateModal = ({
     stockQuantity === 0
       ? "out_of_stock"
       : stockQuantity <= lowStockThreshold
-      ? "low_stock"
-      : "in_stock";
+        ? "low_stock"
+        : "in_stock";
 
   return (
     <AnimatePresence>
@@ -535,8 +535,8 @@ const StockUpdateModal = ({
                       newStockStatus === "in_stock"
                         ? "success"
                         : newStockStatus === "low_stock"
-                        ? "warning"
-                        : "error"
+                          ? "warning"
+                          : "error"
                     }>
                     {newStockStatus.replace("_", " ").toUpperCase()}
                   </Badge>

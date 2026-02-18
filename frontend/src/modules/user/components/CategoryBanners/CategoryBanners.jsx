@@ -21,10 +21,10 @@ const CategoryBanners = () => {
                         <div key={category.id} className="flex flex-col items-center cursor-pointer transition-all group max-sm:min-w-[120px] max-sm:shrink-0">
                             <div className="w-full aspect-square rounded-2xl overflow-hidden mb-4 shadow-sm bg-gray-100">
                                 <img
-                                    src={category.image || 'https://via.placeholder.com/150?text=' + category.name}
+                                    src={category.image || 'https://placehold.co/150?text=' + category.name}
                                     alt={category.name}
                                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                    onError={(e) => { e.target.src = 'https://via.placeholder.com/150?text=' + category.name }}
+                                    onError={(e) => { e.target.src = 'https://placehold.co/150?text=' + category.name }}
                                 />
                             </div>
                             <p className="text-sm md:text-base font-bold text-center text-text-primary">{category.name}</p>

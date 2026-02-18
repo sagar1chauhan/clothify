@@ -43,9 +43,9 @@ export const mockOrders = [
 ];
 
 export const topProducts = [
-    { id: 1, name: 'Premium Cotton T-Shirt', sales: 154, revenue: 154000, image: 'https://via.placeholder.com/100x100' },
-    { id: 2, name: 'Slim Fit Denim Jeans', sales: 120, revenue: 240000, image: 'https://via.placeholder.com/100x100' },
-    { id: 3, name: 'Classic Leather Jacket', sales: 85, revenue: 425000, image: 'https://via.placeholder.com/100x100' },
+    { id: 1, name: 'Premium Cotton T-Shirt', sales: 154, revenue: 154000, image: 'https://placehold.co/100x100' },
+    { id: 2, name: 'Slim Fit Denim Jeans', sales: 120, revenue: 240000, image: 'https://placehold.co/100x100' },
+    { id: 3, name: 'Classic Leather Jacket', sales: 85, revenue: 425000, image: 'https://placehold.co/100x100' },
 ];
 
 export const getAnalyticsSummary = () => ({

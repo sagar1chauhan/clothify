@@ -587,7 +587,7 @@ const StockManagementModal = ({ isOpen, product, lowStockThreshold, isAppRoute, 
                     alt={product.name}
                     className="w-16 h-16 object-cover rounded-lg"
                     onError={(e) => {
-                      e.target.src = 'https://via.placeholder.com/64x64?text=Product';
+                      e.target.src = 'https://placehold.co/64x64?text=Product';
                     }}
                   />
                   <div className="flex-1 min-w-0">

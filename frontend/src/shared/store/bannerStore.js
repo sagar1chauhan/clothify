@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 
 const initialBanners = [
-    { id: 1, title: 'Big Summer Sale', type: 'hero', isActive: true, order: 1, image: 'https://via.placeholder.com/1200x400?text=Summer+Sale' },
-    { id: 2, title: 'New Winter Collection', type: 'hero', isActive: true, order: 2, image: 'https://via.placeholder.com/1200x400?text=Winter+Collection' },
-    { id: 3, title: 'Buy 1 Get 1 Free', type: 'promotional', isActive: true, order: 3, image: 'https://via.placeholder.com/800x200?text=B1G1+Offer' }
+    { id: 1, title: 'Big Summer Sale', type: 'hero', isActive: true, order: 1, image: 'https://placehold.co/1200x400?text=Summer+Sale' },
+    { id: 2, title: 'New Winter Collection', type: 'hero', isActive: true, order: 2, image: 'https://placehold.co/1200x400?text=Winter+Collection' },
+    { id: 3, title: 'Buy 1 Get 1 Free', type: 'promotional', isActive: true, order: 3, image: 'https://placehold.co/800x200?text=B1G1+Offer' }
 ];
 
 export const useBannerStore = create((set) => ({

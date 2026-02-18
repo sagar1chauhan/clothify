@@ -116,7 +116,7 @@ const OrderDetail = () => {
     }
 
     // Return placeholder
-    return 'https://via.placeholder.com/100x100?text=Product';
+    return 'https://placehold.co/100x100?text=Product';
   };
 
   return (

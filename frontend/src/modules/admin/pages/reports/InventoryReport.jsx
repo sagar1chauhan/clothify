@@ -35,7 +35,7 @@ const InventoryReport = () => {
             alt={value}
             className="w-10 h-10 object-cover rounded-lg"
             onError={(e) => {
-              e.target.src = 'https://via.placeholder.com/50x50?text=Product';
+              e.target.src = 'https://placehold.co/50x50?text=Product';
             }}
           />
           <span className="font-medium">{value}</span>
@@ -53,11 +53,10 @@ const InventoryReport = () => {
       label: 'Status',
       sortable: true,
       render: (value) => (
-        <span className={`px-2 py-1 rounded text-xs font-medium ${
-          value === 'in_stock' ? 'bg-green-100 text-green-800' :
-          value === 'low_stock' ? 'bg-yellow-100 text-yellow-800' :
-          'bg-red-100 text-red-800'
-        }`}>
+        <span className={`px-2 py-1 rounded text-xs font-medium ${value === 'in_stock' ? 'bg-green-100 text-green-800' :
+            value === 'low_stock' ? 'bg-yellow-100 text-yellow-800' :
+              'bg-red-100 text-red-800'
+          }`}>
           {value.replace('_', ' ').toUpperCase()}
         </span>
       ),

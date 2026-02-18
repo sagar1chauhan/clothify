@@ -71,7 +71,7 @@ const HomeSliders = () => {
             alt={row.title}
             className="w-16 h-16 object-cover rounded-lg"
             onError={(e) => {
-              e.target.src = "https://via.placeholder.com/64x64?text=Image";
+              e.target.src = "https://placehold.co/64x64?text=Image";
             }}
           />
           <span className="font-medium text-gray-800">{row.title}</span>

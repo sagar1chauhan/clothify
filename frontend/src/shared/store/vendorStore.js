@@ -11,7 +11,7 @@ const initialVendors = [
         status: "approved",
         commissionRate: 0.1,
         joinDate: "2023-10-15T10:30:00Z",
-        storeLogo: "https://via.placeholder.com/100x100?text=FH",
+        storeLogo: "https://placehold.co/100x100?text=FH",
         address: {
             street: "123 Main St",
             city: "Mumbai",
@@ -28,7 +28,7 @@ const initialVendors = [
         status: "approved",
         commissionRate: 0.12,
         joinDate: "2023-11-20T14:20:00Z",
-        storeLogo: "https://via.placeholder.com/100x100?text=EA",
+        storeLogo: "https://placehold.co/100x100?text=EA",
         address: {
             street: "456 Oak Lane",
             city: "Bangalore",
@@ -45,7 +45,7 @@ const initialVendors = [
         status: "pending",
         commissionRate: 0.1,
         joinDate: "2024-01-05T09:15:00Z",
-        storeLogo: "https://via.placeholder.com/100x100?text=US",
+        storeLogo: "https://placehold.co/100x100?text=US",
         address: {
             street: "789 Pine Rd",
             city: "Delhi",
@@ -62,7 +62,7 @@ const initialVendors = [
         status: "suspended",
         commissionRate: 0.15,
         joinDate: "2023-08-12T11:45:00Z",
-        storeLogo: "https://via.placeholder.com/100x100?text=LB",
+        storeLogo: "https://placehold.co/100x100?text=LB",
         address: {
             street: "101 Maple Dr",
             city: "Chennai",

@@ -114,7 +114,7 @@ const ManageProducts = () => {
             alt={value}
             className="w-10 h-10 object-cover rounded-lg"
             onError={(e) => {
-              e.target.src = "https://via.placeholder.com/50x50?text=Product";
+              e.target.src = "https://placehold.co/50x50?text=Product";
             }}
           />
           <span className="font-medium">{value}</span>

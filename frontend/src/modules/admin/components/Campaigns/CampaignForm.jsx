@@ -852,7 +852,7 @@ const CampaignForm = ({ campaign, onClose, onSave }) => {
                               className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
                               onError={(e) => {
                                 e.target.src =
-                                  "https://via.placeholder.com/48x48?text=Product";
+                                  "https://placehold.co/48x48?text=Product";
                               }}
                             />
                             <div className="flex-1 min-w-0">
