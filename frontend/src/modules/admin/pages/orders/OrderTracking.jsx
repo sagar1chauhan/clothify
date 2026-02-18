@@ -42,8 +42,8 @@ const OrderTracking = () => {
         label: "Processing",
         status:
           status === "processing" ||
-          status === "shipped" ||
-          status === "delivered"
+            status === "shipped" ||
+            status === "delivered"
             ? "completed"
             : "pending",
         icon: FiPackage,
@@ -174,20 +174,18 @@ const OrderTracking = () => {
                   return (
                     <div key={index} className="flex items-start gap-3">
                       <div
-                        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                          step.status === "completed"
+                        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${step.status === "completed"
                             ? "bg-green-100 text-green-600"
                             : "bg-gray-100 text-gray-400"
-                        }`}>
+                          }`}>
                         <Icon className="text-sm" />
                       </div>
                       <div className="flex-1">
                         <p
-                          className={`font-medium ${
-                            step.status === "completed"
+                          className={`font-medium ${step.status === "completed"
                               ? "text-gray-800"
                               : "text-gray-400"
-                          }`}>
+                            }`}>
                           {step.label}
                         </p>
                         {step.status === "completed" && (
@@ -201,7 +199,7 @@ const OrderTracking = () => {
                 })}
               </div>
               <button
-                onClick={() => navigate(`/admin/orders/${selectedOrder.id}`)}
+                onClick={() => navigate(`/admin/orders/detail/${selectedOrder.id}`)}
                 className="w-full mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold">
                 View Full Details
               </button>

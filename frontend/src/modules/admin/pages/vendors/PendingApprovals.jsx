@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import DataTable from "../../components/DataTable";
 import Badge from "../../../../shared/components/Badge";
 import ConfirmModal from "../../components/ConfirmModal";
-import { useVendorStore } from "../../../Vendor/store/vendorStore";
+import { useVendorStore } from "../../../../shared/store/vendorStore";
 import toast from "react-hot-toast";
 
 const PendingApprovals = () => {

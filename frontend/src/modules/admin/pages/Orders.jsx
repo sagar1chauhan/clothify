@@ -43,7 +43,7 @@ const Orders = () => {
 
     orders.forEach((order) => {
       const status = order.status?.toLowerCase() || '';
-      
+
       if (status === 'pending') {
         stats.pending++;
       } else if (status === 'processing') {
@@ -152,7 +152,7 @@ const Orders = () => {
       className="space-y-5 sm:space-y-6"
     >
       {/* Header */}
-      <div className="px-1">
+      <div className="px-1 lg:hidden">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1.5">
           Orders
         </h1>
@@ -175,7 +175,7 @@ const Orders = () => {
             >
               {/* Decorative gradient overlay */}
               <div className={`absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 ${card.bgColor} opacity-10 rounded-full -mr-12 -mt-12 sm:-mr-16 sm:-mt-16`}></div>
-              
+
               <div className="flex items-center justify-between mb-2 sm:mb-3 relative z-10">
                 <div className={`${card.bgColor} bg-white/20 p-2 sm:p-2.5 rounded-lg shadow-md`}>
                   <Icon className="text-white text-base sm:text-lg" />

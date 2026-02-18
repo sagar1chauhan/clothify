@@ -3,9 +3,10 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import { motion } from 'framer-motion';
 import { mockOrders } from '../../../../data/adminMockData';
 
-const OrderStatusPieChart = () => {
+const OrderStatusPieChart = ({ data }) => {
   const statusData = useMemo(() => {
-    const statusCounts = mockOrders.reduce((acc, order) => {
+    const ordersToAnalyze = data || mockOrders;
+    const statusCounts = ordersToAnalyze.reduce((acc, order) => {
       acc[order.status] = (acc[order.status] || 0) + 1;
       return acc;
     }, {});

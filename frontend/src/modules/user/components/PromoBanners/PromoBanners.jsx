@@ -21,15 +21,15 @@ const PromoBanners = () => {
     return (
         <div className="w-full bg-white pb-4">
             {/* Main Hero Promo Banner */}
-            <div className="w-full pt-0 pb-1 md:pb-2">
+            <div className="w-full pt-0 pb-1 md:pb-1">
                 <div
-                    className="relative w-full aspect-[21/9] md:h-[300px] rounded-b-[40px] md:rounded-b-[80px] overflow-hidden group cursor-pointer transition-colors duration-500"
+                    className="relative w-full h-[150px] md:h-[180px] rounded-b-[30px] md:rounded-b-[40px] overflow-hidden group cursor-pointer transition-colors duration-500"
                     style={{ backgroundColor: currentBgColor }}
                 >
                     {/* Background Grid Pattern */}
-                    <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+                    <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '25px 25px' }} />
 
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center ">
                         {/* Styled "Modern Love Edit" Text with Clouds and Heart */}
                         <div className="relative animate-fadeInUp">
                             {/* Decorative Clouds */}
@@ -43,20 +43,20 @@ const PromoBanners = () => {
                             </div>
 
                             <div className="flex items-center gap-2 md:gap-4">
-                                <h2 className="text-white font-display font-black text-4xl md:text-7xl leading-[0.85] tracking-tighter drop-shadow-2xl">
+                                <h2 className="text-white font-display font-black text-3xl md:text-6xl leading-[0.85] tracking-tighter drop-shadow-2xl">
                                     Modern<br />
-                                    <span className="text-2xl md:text-5xl">Love Edit</span>
+                                    <span className="text-xl md:text-4xl">Love Edit</span>
                                 </h2>
 
                                 {/* Heart Badge */}
                                 <div className="relative shrink-0 flex items-center justify-center transform hover:scale-110 transition-transform duration-500">
-                                    <svg width="100" height="100" viewBox="0 0 100 100" className="w-[100px] h-[100px] md:w-[140px] md:h-[140px] fill-transparent stroke-white stroke-[4]">
+                                    <svg width="100" height="100" viewBox="0 0 100 100" className="w-[100px] h-[100px] md:w-[120px] md:h-[120px] fill-transparent stroke-white stroke-[4]">
                                         <path d="M50 85c-1.5 0-3-.5-4-1.5C36 74 15 54 15 37c0-10 8-18 18-18 5.5 0 11 3 14 7.5 1-1.5 2-2.5 3-3.5 3-4.5 8.5-7.5 14-7.5 10 0 18 8 18 18 0 17-21 37-31 46.5-1 1-2.5 1.5-4 1.5z" />
                                     </svg>
                                     <div className="absolute inset-0 flex items-center justify-center text-white text-center">
-                                        <div className="flex flex-col scale-[0.6] md:scale-[0.85]">
+                                        <div className="flex flex-col scale-[0.6] md:scale-[0.8]">
                                             <span className="text-[10px] md:text-xs font-black uppercase tracking-tighter ">Up TO</span>
-                                            <span className="text-xl md:text-4xl font-black leading-none ">80%</span>
+                                            <span className="text-lg md:text-3xl font-black leading-none ">80%</span>
                                             <span className="text-[10px] md:text-xs font-black uppercase tracking-tighter">OFF</span>
                                         </div>
                                     </div>
@@ -71,24 +71,24 @@ const PromoBanners = () => {
             <TickerBelt />
 
             {/* Discount Announcement Banner */}
-            <div className="bg-white py-8 md:py-12 overflow-hidden relative border-y border-gray-50 flex items-center justify-center">
+            <div className="bg-white py-0 md:py-2 overflow-hidden relative border-y border-gray-50 flex items-center justify-center">
                 {/* Grid Background */}
                 <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
-                <div className="relative flex flex-col md:flex-row items-center gap-4 md:gap-16">
+                <div className="relative flex flex-col md:flex-row items-center gap-4 md:gap-16 scale-90 md:scale-100 origin-center">
                     <div className="flex items-center gap-4">
                         <span className="text-gray-400 font-bold uppercase text-[10px] [writing-mode:vertical-lr] rotate-180 tracking-tighter opacity-50">Get</span>
                         <div className="flex items-baseline gap-1">
-                            <span className="text-6xl md:text-[130px] font-black leading-none text-black tracking-tighter">₹250</span>
-                            <span className="text-xl md:text-4xl font-black text-black">OFF</span>
+                            <span className="text-4xl md:text-[80px] font-black leading-none text-black tracking-tighter">₹250</span>
+                            <span className="text-lg md:text-2xl font-black text-black">OFF</span>
                         </div>
                     </div>
 
-                    <div className="h-16 w-px bg-gray-200 hidden md:block" />
+                    <div className="h-10 md:h-12 w-px bg-gray-200 hidden md:block" />
 
-                    <div className="text-center md:text-left space-y-1">
-                        <p className="text-gray-900 font-bold text-xl md:text-3xl tracking-tight">On your first 2 order</p>
-                        <p className="text-gray-900 font-black text-xl md:text-3xl tracking-tight">Use Code <span className="text-black">FIRST50</span></p>
+                    <div className="text-center md:text-left space-y-0.5">
+                        <p className="text-gray-900 font-bold text-base md:text-xl tracking-tight">On your first 2 order</p>
+                        <p className="text-gray-900 font-black text-base md:text-xl tracking-tight">Use Code <span className="text-black">FIRST50</span></p>
                     </div>
                 </div>
             </div>
@@ -97,14 +97,14 @@ const PromoBanners = () => {
             <TickerBelt />
 
             {/* Deal of the Day Section */}
-            <div className="py-10 bg-white overflow-hidden">
+            <div className="py-6 md:py-6 bg-white overflow-hidden">
                 <div className="container mx-auto px-4 md:px-12 lg:px-24">
                     {/* Section Header */}
-                    <div className="flex flex-col items-center mb-12 text-center">
+                    <div className="flex flex-col items-center mb-6 md:mb-8 text-center">
                         <div className="flex items-center gap-2 group">
-                            <Heart fill={currentBgColor} size={24} className="animate-pulse" />
-                            <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-black">Deal of the Day</h2>
-                            <Heart fill={currentBgColor} size={24} className="animate-pulse" />
+                            <Heart fill={currentBgColor} size={20} className="animate-pulse" />
+                            <h2 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-black">Deal of the Day</h2>
+                            <Heart fill={currentBgColor} size={20} className="animate-pulse" />
                         </div>
                         <p className="text-[11px] md:text-xs font-black text-gray-400 uppercase tracking-[0.2em] mt-2">
                             Today's Deal • <span style={{ color: currentBgColor }}>Gone Tomorrow</span>

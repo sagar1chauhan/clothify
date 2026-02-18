@@ -142,6 +142,7 @@ export const categories = [
 export const products = [
     {
         id: 1,
+        vendorId: 1,
         brand: 'The Bear House',
         name: 'White Regular Fit Textured Crew Neck T-Shirt',
         division: 'Men',
@@ -160,6 +161,7 @@ export const products = [
     },
     {
         id: 2,
+        vendorId: 1,
         brand: 'BONKERS CORNER',
         name: 'Up In The Sky Sweatshirt',
         division: 'Men',
@@ -178,6 +180,7 @@ export const products = [
     },
     {
         id: 3,
+        vendorId: 1,
         brand: 'SILISOUL',
         name: 'Oversized Pullover Hoodie Pure Cotton',
         division: 'Men',

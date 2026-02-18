@@ -8,6 +8,7 @@ export default {
     extend: {
       colors: {
         primary: {
+          DEFAULT: '#2874F0', // Main brand blue
           50: '#f0f7ff',
           100: '#e0effe',
           200: '#bae0fd',

@@ -6,7 +6,8 @@ import { formatPrice } from "../../../../shared/utils/helpers";
 import { mockOrders } from "../../../../data/adminMockData";
 import { useSettingsStore } from "../../../../shared/store/settingsStore";
 import toast from "react-hot-toast";
-import logoImage from "../../../../../data/logos/ChatGPT Image Dec 2, 2025, 03_01_19 PM.png";
+import { appLogo } from "../../../../data/logos";
+const logoImage = appLogo.src;
 
 const Invoice = () => {
   const navigate = useNavigate();
@@ -41,11 +42,11 @@ const Invoice = () => {
   const items = Array.isArray(order.items)
     ? order.items
     : Array.from({ length: order.items || 1 }, (_, i) => ({
-        id: i + 1,
-        name: `Item ${i + 1}`,
-        quantity: 1,
-        price: (order.total || 0) / (order.items || 1),
-      }));
+      id: i + 1,
+      name: `Item ${i + 1}`,
+      quantity: 1,
+      price: (order.total || 0) / (order.items || 1),
+    }));
 
   // Calculate totals
   const subtotal = order.subtotal || order.total || 0;
@@ -87,20 +88,19 @@ ${order.customer?.phone || order.shippingAddress?.phone || ""}
 Shipping Address:
 ${order.shippingAddress?.name || order.customer?.name || "N/A"}
 ${order.shippingAddress?.address || "N/A"}
-${order.shippingAddress?.city || ""}, ${order.shippingAddress?.state || ""} ${
-      order.shippingAddress?.zipCode || ""
-    }
+${order.shippingAddress?.city || ""}, ${order.shippingAddress?.state || ""} ${order.shippingAddress?.zipCode || ""
+      }
 ${order.shippingAddress?.country || ""}
 
 Items:
 ${items
-  .map(
-    (item) =>
-      `- ${item.name || "Item"} x${item.quantity || 1} - ${formatPrice(
-        (item.price || 0) * (item.quantity || 1)
-      )}`
-  )
-  .join("\n")}
+        .map(
+          (item) =>
+            `- ${item.name || "Item"} x${item.quantity || 1} - ${formatPrice(
+              (item.price || 0) * (item.quantity || 1)
+            )}`
+        )
+        .join("\n")}
 
 Subtotal: ${formatPrice(subtotal)}
 ${discount > 0 ? `Discount: -${formatPrice(discount)}\n` : ""}
@@ -232,16 +232,16 @@ ${order.trackingNumber ? `Tracking Number: ${order.trackingNumber}` : ""}
                 {(order.shippingAddress.city ||
                   order.shippingAddress.state ||
                   order.shippingAddress.zipCode) && (
-                  <p>
-                    {[
-                      order.shippingAddress.city,
-                      order.shippingAddress.state,
-                      order.shippingAddress.zipCode,
-                    ]
-                      .filter(Boolean)
-                      .join(", ")}
-                  </p>
-                )}
+                    <p>
+                      {[
+                        order.shippingAddress.city,
+                        order.shippingAddress.state,
+                        order.shippingAddress.zipCode,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </p>
+                  )}
                 {order.shippingAddress.country && (
                   <p>{order.shippingAddress.country}</p>
                 )}

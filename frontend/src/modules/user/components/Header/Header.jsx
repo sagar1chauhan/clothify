@@ -29,43 +29,16 @@ const Header = () => {
     const cartCount = getCartCount();
     const location = useLocation();
     const navigate = useNavigate();
-    const [isScrolled, setIsScrolled] = useState(false);
-    const [isVisible, setIsVisible] = useState(true);
-    const [lastScrollY, setLastScrollY] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
-
-    useEffect(() => {
-        const handleScroll = () => {
-            const currentScrollY = window.scrollY;
-
-            // Only show header when at the very top of the page
-            if (currentScrollY < 30) {
-                setIsVisible(true);
-            } else {
-                setIsVisible(false);
-            }
-
-            setIsScrolled(currentScrollY > 20);
-            setLastScrollY(currentScrollY);
-        };
-        window.addEventListener('scroll', handleScroll, { passive: true });
-
-        return () => {
-            window.removeEventListener('scroll', handleScroll);
-        };
-    }, [lastScrollY]);
 
     const [searchSuggestions, setSearchSuggestions] = useState([]);
 
     const handleSearchInput = (value) => {
         setSearchQuery(value);
         if (value.trim().length > 1) {
-            const filtered = products.filter(p =>
-                p.name.toLowerCase().includes(value.toLowerCase()) ||
-                p.brand.toLowerCase().includes(value.toLowerCase()) ||
-                p.category.toLowerCase().includes(value.toLowerCase())
-            ).slice(0, 6);
-            setSearchSuggestions(filtered);
+            const filtered = categories.filter(c => c.name.toLowerCase().includes(value.toLowerCase())); // Mock search
+            // Real search logic would go here
+            setSearchSuggestions([]);
         } else {
             setSearchSuggestions([]);
         }
@@ -91,36 +64,33 @@ const Header = () => {
     const currentBgColor = getCategoryColor(activeCategory);
 
     return (
-        <header className={`w-full sticky top-0 z-[9999] transition-all duration-300 transform ${isScrolled ? 'shadow-lg' : 'shadow-sm'} ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+        <header className="w-full relative z-[999] shadow-sm transition-colors duration-500" style={{ backgroundColor: currentBgColor }}>
             {/* Top Colored Section */}
-            <div
-                className={`relative z-[60] transition-all duration-500 ease-in-out ${isScrolled ? 'bg-white/80 backdrop-blur-xl border-b border-white/20' : ''}`}
-                style={{ backgroundColor: isScrolled ? 'transparent' : currentBgColor }}
-            >
+            <div className="relative z-[60]">
                 {/* Location Bar / Address Bar - Myntra Style */}
                 <div
                     onClick={() => setIsLocationModalOpen(true)}
-                    className={`px-4 py-2.5 flex justify-between items-center group cursor-pointer transition-colors border-b ${isScrolled ? 'bg-transparent border-white/5' : 'bg-white md:bg-transparent border-gray-100 md:border-white/5'}`}
+                    className="px-4 py-2.5 flex justify-between items-center group cursor-pointer transition-colors border-b border-white/10 bg-transparent"
                 >
                     <div className="flex items-center gap-3 overflow-hidden">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-colors ${isScrolled ? 'bg-gray-100' : 'bg-gray-50 md:bg-white/20'}`}>
-                            <MapPin size={16} className={isScrolled ? 'text-black' : 'text-black md:text-white'} />
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-colors bg-white/20">
+                            <MapPin size={16} className="text-white" />
                         </div>
                         <div className="flex flex-col min-w-0">
-                            <span className={`text-[13px] font-black leading-tight flex items-center gap-2 ${isScrolled ? 'text-gray-900' : 'text-gray-900 md:text-white'}`}>
-                                {activeAddress ? activeAddress.name : 'Select Location'} <span className={`text-[10px] font-normal uppercase tracking-wider opacity-70 ${isScrolled ? 'text-gray-500' : 'text-gray-500 md:text-white'}`}>{activeAddress?.type}</span>
+                            <span className="text-[13px] font-black leading-tight flex items-center gap-2 text-white">
+                                {activeAddress ? activeAddress.name : 'Select Location'} <span className="text-[10px] font-normal uppercase tracking-wider opacity-70 text-white">{activeAddress?.type}</span>
                             </span>
-                            <span className={`text-[11px] font-medium truncate max-w-[200px] opacity-80 ${isScrolled ? 'text-gray-500' : 'text-gray-500 md:text-white'}`}>
+                            <span className="text-[11px] font-medium truncate max-w-[200px] opacity-80 text-white">
                                 {activeAddress ? `${activeAddress.address}, ${activeAddress.city}` : 'Add an address to see delivery info'}
                             </span>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <ChevronDown size={16} className={`transition-transform group-hover:rotate-180 ${isScrolled ? 'text-gray-400' : 'text-gray-400 md:text-white/70'}`} />
+                        <ChevronDown size={16} className="transition-transform group-hover:rotate-180 text-white/70" />
                         {/* Mobile Right Icons (Wishlist & Cart) */}
-                        <div className="flex md:hidden items-center gap-2 pl-2 border-l border-gray-100">
+                        <div className="flex md:hidden items-center gap-2 pl-2 border-l border-white/20">
                             <Link to="/wishlist" onClick={(e) => e.stopPropagation()} className="relative p-1">
-                                <Heart size={20} className="text-black" />
+                                <Heart size={20} className="text-white" />
                                 {wishlistItems.length > 0 && (
                                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white">
                                         {wishlistItems.length}
@@ -128,7 +98,7 @@ const Header = () => {
                                 )}
                             </Link>
                             <Link to="/cart" onClick={(e) => e.stopPropagation()} className="relative p-1">
-                                <ShoppingCart size={20} className="text-black" />
+                                <ShoppingCart size={20} className="text-white" />
                                 {cartCount > 0 && (
                                     <span className="absolute -top-1 -right-1 bg-[#39ff14] text-black text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white">
                                         {cartCount}
@@ -188,12 +158,12 @@ const Header = () => {
                 <div className="hidden md:flex flex-col">
                     <div className="flex items-center justify-between px-6 py-2">
                         <Link to="/" className="no-underline">
-                            <h1 className={`text-[28px] font-extrabold tracking-widest drop-shadow-sm transition-colors duration-500 ${isScrolled ? 'text-black' : 'text-white'}`}>Clothify</h1>
+                            <h1 className="text-[28px] font-extrabold tracking-widest drop-shadow-sm transition-colors duration-500 text-white">Clothify</h1>
                         </Link>
 
                         <div className="flex items-center gap-8">
                             <div
-                                className={`flex items-center gap-2 text-[13px] font-black uppercase tracking-widest cursor-pointer transition-colors py-1 group ${isScrolled ? 'text-gray-800 hover:text-black' : 'text-white/90 hover:text-white'}`}
+                                className="flex items-center gap-2 text-[13px] font-black uppercase tracking-widest cursor-pointer transition-colors py-1 group text-white/90 hover:text-white"
                                 onMouseEnter={() => setIsMegaMenuOpen(true)}
                             >
                                 <LayoutGrid size={18} className="text-[#39ff14] group-hover:scale-110 transition-transform" />
@@ -201,12 +171,12 @@ const Header = () => {
                             </div>
                             <div
                                 onClick={() => setIsDiscoverOpen(true)}
-                                className={`flex items-center gap-2 text-[13px] font-black uppercase tracking-widest cursor-pointer transition-colors ${isScrolled ? 'text-gray-800 hover:text-black' : 'text-white/90 hover:text-white'}`}
+                                className="flex items-center gap-2 text-[13px] font-black uppercase tracking-widest cursor-pointer transition-colors text-white/90 hover:text-white"
                             >
                                 <Compass size={18} className="text-pink-400 animate-spin-slow" />
                                 Discover
                             </div>
-                            <Link to="/wishlist" className={`relative flex items-center gap-2 text-[13px] font-black uppercase tracking-widest no-underline transition-colors ${isScrolled ? 'text-gray-800 hover:text-black' : 'text-white/90 hover:text-white'}`}>
+                            <Link to="/wishlist" className="relative flex items-center gap-2 text-[13px] font-black uppercase tracking-widest no-underline transition-colors text-white/90 hover:text-white">
                                 <Heart size={18} className="text-red-400" />
                                 Wishlist
                                 {wishlistItems.length > 0 && (
@@ -215,7 +185,7 @@ const Header = () => {
                                     </span>
                                 )}
                             </Link>
-                            <Link to="/cart" className={`relative transition-colors ${isScrolled ? 'text-black hover:text-[#39ff14]' : 'text-white hover:text-[#39ff14]'}`}>
+                            <Link to="/cart" className="relative transition-colors text-white hover:text-[#39ff14]">
                                 <ShoppingCart size={22} />
                                 {cartCount > 0 && (
                                     <span className="absolute -top-2 -right-2 bg-[#39ff14] text-black text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
@@ -225,11 +195,11 @@ const Header = () => {
                             </Link>
                             <Link
                                 to={user ? "/profile" : "/login"}
-                                className={`transition-colors flex flex-col items-center group relative ${isScrolled ? 'text-black hover:text-[#39ff14]' : 'text-white hover:text-[#39ff14]'}`}
+                                className="transition-colors flex flex-col items-center group relative text-white hover:text-[#39ff14]"
                             >
                                 <User size={22} className={user ? 'text-[#39ff14]' : ''} />
                                 {!user && (
-                                    <span className={`absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] font-black uppercase tracking-tighter whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all ${isScrolled ? 'text-gray-400 group-hover:text-black' : 'text-white/50 group-hover:text-white'}`}>
+                                    <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] font-black uppercase tracking-tighter whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all text-white/50 group-hover:text-white">
                                         Login
                                     </span>
                                 )}
