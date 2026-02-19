@@ -58,7 +58,7 @@ const ReturnRequests = () => {
     if (dateFilter !== 'all') {
       const now = new Date();
       const filterDate = new Date();
-      
+
       switch (dateFilter) {
         case 'today':
           filterDate.setHours(0, 0, 0, 0);
@@ -89,26 +89,52 @@ const ReturnRequests = () => {
           status: newStatus,
           updatedAt: new Date().toISOString(),
         };
-        
+
         if (newStatus === 'approved' && action === 'approve') {
           updated.refundStatus = 'pending';
         } else if (newStatus === 'completed' && action === 'process-refund') {
           updated.refundStatus = 'processed';
         }
-        
+
         return updated;
       }
       return request;
     });
-    
+
     saveReturnRequests(updatedRequests);
-    
+
+    // Update the corresponding order status for connectivity
+    const updatedRequest = updatedRequests.find(r => r.id === requestId);
+    if (updatedRequest) {
+      const orderStatusMap = {
+        'pending': 'return requested',
+        'approved': 'return approved',
+        'processing': 'return processing',
+        'completed': 'returned & refunded',
+        'rejected': 'delivered'
+      };
+
+      const updateOrders = (key) => {
+        const orders = JSON.parse(localStorage.getItem(key) || '[]');
+        const updatedOrderList = orders.map(o => {
+          if (String(o.id) === String(updatedRequest.orderId)) {
+            return { ...o, status: orderStatusMap[newStatus] || o.status };
+          }
+          return o;
+        });
+        localStorage.setItem(key, JSON.stringify(updatedOrderList));
+      };
+
+      updateOrders('admin-orders');
+      updateOrders('userOrders');
+    }
+
     const statusMessages = {
       approve: 'Return request approved',
       reject: 'Return request rejected',
       'process-refund': 'Refund processed successfully',
     };
-    
+
     toast.success(statusMessages[action] || 'Status updated successfully');
   };
 
@@ -137,7 +163,7 @@ const ReturnRequests = () => {
       label: 'Order ID',
       sortable: true,
       render: (value) => (
-        <span className="text-blue-600 hover:text-blue-800 cursor-pointer" onClick={() => navigate(`/admin/orders/${value}`)}>
+        <span className="text-blue-600 hover:text-blue-800 cursor-pointer" onClick={() => navigate(`/admin/orders/detail/${value}`)}>
           {value}
         </span>
       ),

@@ -29,7 +29,7 @@ const DeliveryRoutes = () => {
                     <Route index element={<Navigate to="dashboard" replace />} />
                     <Route path="dashboard" element={<Dashboard />} />
                     <Route path="orders" element={<Orders />} />
-                    <Route path="orders/:orderId" element={<OrderDetail />} />
+                    <Route path="orders/:id" element={<OrderDetail />} />
                     <Route path="profile" element={<Profile />} />
                 </Route>
             </Routes>

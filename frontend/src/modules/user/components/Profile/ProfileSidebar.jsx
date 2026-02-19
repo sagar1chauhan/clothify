@@ -17,6 +17,11 @@ const ProfileSidebar = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
+
     const sidebarLinks = [
         { id: 'profile', label: 'Profile', path: '/profile', icon: <User size={18} /> },
         { id: 'addresses', label: 'Addresses', path: '/addresses', icon: <MapPin size={18} /> },
@@ -60,7 +65,7 @@ const ProfileSidebar = () => {
                         </button>
                     ))}
                     <button
-                        onClick={logout}
+                        onClick={handleLogout}
                         className="flex items-center gap-4 px-6 py-6 text-gray-400 font-bold hover:text-red-500 transition-colors"
                     >
                         <LogOut size={18} />

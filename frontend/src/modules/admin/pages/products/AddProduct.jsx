@@ -61,10 +61,10 @@ const AddProduct = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [name]: type === "checkbox" ? checked : value,
-    });
+    }));
   };
 
   const handleImageUpload = (e) => {
@@ -84,10 +84,10 @@ const AddProduct = () => {
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData({
-          ...formData,
+        setFormData((prev) => ({
+          ...prev,
           image: reader.result, // Base64 data URL
-        });
+        }));
       };
       reader.onerror = () => {
         toast.error("Error reading image file");
@@ -127,10 +127,10 @@ const AddProduct = () => {
 
     Promise.all(readers)
       .then((results) => {
-        setFormData({
-          ...formData,
-          images: [...formData.images, ...results],
-        });
+        setFormData((prev) => ({
+          ...prev,
+          images: [...prev.images, ...results],
+        }));
         toast.success(`${validFiles.length} image(s) added to gallery`);
       })
       .catch(() => {
@@ -139,10 +139,10 @@ const AddProduct = () => {
   };
 
   const removeGalleryImage = (index) => {
-    setFormData({
-      ...formData,
-      images: formData.images.filter((_, i) => i !== index),
-    });
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
   };
 
   const handleSubmit = (e) => {

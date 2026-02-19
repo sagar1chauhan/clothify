@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from "react";
+import ReactDOM from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   FiSearch,
@@ -26,240 +27,207 @@ import ConfirmModal from "../../components/ConfirmModal";
 import AnimatedSelect from "../../components/AnimatedSelect";
 import { formatPrice } from "../../../../shared/utils/helpers";
 import { formatCurrency, formatDateTime } from "../../utils/adminHelpers";
-import { mockOrders } from "../../../../data/adminMockData";
+import { useOrderStore } from "../../../../shared/store/orderStore";
 import toast from "react-hot-toast";
 
-// OrderItemsDropdown component
+// OrderItemsDropdown component — uses Portal to avoid overflow clipping
 const OrderItemsDropdown = ({ items, orderTotal }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [openUpward, setOpenUpward] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0, openUpward: false, ready: false });
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
 
-  // Normalize items - handle both array and number formats
+  // Normalize items
   const normalizedItems = useMemo(() => {
-    if (Array.isArray(items)) {
-      return items;
-    }
-    // If items is a number, generate mock items
+    if (Array.isArray(items)) return items;
     if (typeof items === "number" && items > 0) {
-      const itemCount = items;
-      const avgPrice = orderTotal / itemCount;
-      return Array.from({ length: itemCount }, (_, i) => ({
-        id: i + 1,
-        name: `Item ${i + 1}`,
-        quantity: 1,
-        price: avgPrice,
+      const avgPrice = orderTotal / items;
+      return Array.from({ length: items }, (_, i) => ({
+        id: i + 1, name: `Item ${i + 1}`, quantity: 1, price: avgPrice,
       }));
     }
     return [];
   }, [items, orderTotal]);
 
-  // Check available space and determine dropdown direction
-  useEffect(() => {
+  // Calculate position
+  useLayoutEffect(() => {
     if (isOpen && buttonRef.current) {
-      const buttonRect = buttonRef.current.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-      const spaceBelow = windowHeight - buttonRect.bottom;
-      const spaceAbove = buttonRect.top;
-      const dropdownHeight = 400; // max-h-[400px]
+      // CRITICAL FIX: Only calculate and show if the button is actually visible in the DOM
+      if (buttonRef.current.offsetParent === null) return;
 
-      // Open upward if not enough space below but enough space above
-      setOpenUpward(spaceBelow < dropdownHeight && spaceAbove > spaceBelow);
+      const updatePosition = () => {
+        const buttonRect = buttonRef.current.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+        const windowWidth = window.innerWidth;
+        const dropdownHeight = 400;
+        const dropdownWidth = Math.min(windowWidth - 32, 550);
+
+        const spaceBelow = windowHeight - buttonRect.bottom;
+        const spaceAbove = buttonRect.top;
+        const openUpward = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
+
+        let leftPos = buttonRect.left;
+        if (leftPos + dropdownWidth > windowWidth - 16) leftPos = windowWidth - dropdownWidth - 16;
+        if (leftPos < 16) leftPos = 16;
+
+        setDropdownPos({
+          top: openUpward ? buttonRect.top - 8 : buttonRect.bottom + 8,
+          left: leftPos,
+          width: dropdownWidth,
+          openUpward,
+          ready: true
+        });
+      };
+      updatePosition();
+      window.addEventListener("scroll", updatePosition, true);
+      window.addEventListener("resize", updatePosition);
+      return () => {
+        window.removeEventListener("scroll", updatePosition, true);
+        window.removeEventListener("resize", updatePosition);
+      };
+    } else if (!isOpen) {
+      setDropdownPos(prev => ({ ...prev, ready: false }));
     }
   }, [isOpen]);
 
-  // Click outside detection
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        isOpen &&
-        dropdownRef.current &&
-        buttonRef.current &&
-        !dropdownRef.current.contains(event.target) &&
-        !buttonRef.current.contains(event.target)
-      ) {
+    const handleClickOutside = (e) => {
+      if (isOpen && dropdownRef.current && !dropdownRef.current.contains(e.target) && !buttonRef.current?.contains(e.target)) {
         setIsOpen(false);
       }
     };
-
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       document.addEventListener("touchstart", handleClickOutside);
     }
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
     };
   }, [isOpen]);
 
-  if (normalizedItems.length === 0) {
-    return <span className="text-gray-500">No items</span>;
-  }
-
-  const itemCount = normalizedItems.length;
+  if (normalizedItems.length === 0) return <span className="text-gray-500 font-medium text-sm">No items</span>;
 
   return (
-    <div className="relative">
+    <div className="relative inline-block">
       <button
         ref={buttonRef}
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen(!isOpen);
-        }}
-        className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors">
-        <span>
-          {itemCount} {itemCount === 1 ? "item" : "items"}
-        </span>
-        {isOpen ? (
-          <FiChevronUp className="text-xs" />
-        ) : (
-          <FiChevronDown className="text-xs" />
-        )}
+        onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
+        className={`flex items-center gap-1.5 font-bold text-sm transition-all px-2 py-1 rounded-md ${isOpen ? 'bg-blue-100 text-blue-700' : 'text-blue-600 hover:bg-blue-50'
+          }`}>
+        <span>{normalizedItems.length} {normalizedItems.length === 1 ? "item" : "items"}</span>
+        {isOpen ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
+      {isOpen && dropdownPos.ready && ReactDOM.createPortal(
+        <AnimatePresence mode="wait">
           <motion.div
+            key="items-dropdown"
             ref={dropdownRef}
-            initial={{
-              opacity: 0,
-              y: openUpward ? 10 : -10,
-              scale: 0.95,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-              scale: 1,
-            }}
-            exit={{
-              opacity: 0,
-              y: openUpward ? 10 : -10,
-              scale: 0.95,
-            }}
-            transition={{
-              duration: 0.25,
-              ease: [0.4, 0, 0.2, 1],
-              type: "spring",
-              stiffness: 300,
-              damping: 30,
-            }}
-            className={`absolute left-0 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 w-[85vw] sm:w-[500px] max-w-[600px] max-h-[400px] overflow-hidden ${
-              openUpward ? "bottom-full mb-2" : "top-full mt-2"
-            }`}
+            initial={{ opacity: 0, y: dropdownPos.openUpward ? 10 : -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="fixed z-[10000] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
             style={{
-              transformOrigin: openUpward ? "bottom left" : "top left",
+              width: `${dropdownPos.width}px`,
+              top: dropdownPos.openUpward ? undefined : `${dropdownPos.top}px`,
+              bottom: dropdownPos.openUpward ? `${window.innerHeight - dropdownPos.top}px` : undefined,
+              left: `${dropdownPos.left}px`,
+              transformOrigin: dropdownPos.openUpward ? "bottom left" : "top left",
             }}>
-            <div className="p-4 border-b border-gray-200 bg-gray-50">
-              <h3 className="font-semibold text-gray-800 text-sm">
-                Order Items
-              </h3>
+            <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+              <h3 className="font-bold text-gray-900 text-sm uppercase">Order Items ({normalizedItems.length})</h3>
+              <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-gray-200 rounded-full transition-colors">
+                <FiX size={16} className="text-gray-500" />
+              </button>
             </div>
-            <div className="overflow-y-auto overflow-x-auto max-h-[320px] scrollbar-admin">
-              <table className="w-full min-w-[600px] sm:min-w-0">
-                <thead className="bg-gray-50 sticky top-0">
+            <div className="overflow-y-auto max-h-[350px] scrollbar-admin">
+              <table className="w-full">
+                <thead className="bg-gray-50/80 sticky top-0 z-10">
                   <tr>
-                    <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase whitespace-nowrap">
-                      Item ID
-                    </th>
-                    <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase whitespace-nowrap">
-                      Item Name
-                    </th>
-                    <th className="px-2 sm:px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase whitespace-nowrap">
-                      Quantity
-                    </th>
-                    <th className="px-2 sm:px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase whitespace-nowrap">
-                      Unit Price
-                    </th>
-                    <th className="px-2 sm:px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase whitespace-nowrap">
-                      Total
-                    </th>
+                    <th className="px-4 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Item Details</th>
+                    <th className="px-4 py-3 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Qty</th>
+                    <th className="px-4 py-3 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Price</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {normalizedItems.map((item, index) => {
-                    const itemTotal = (item.price || 0) * (item.quantity || 1);
-                    const itemId =
-                      item.id || item.itemId || `ITEM-${index + 1}`;
-                    return (
-                      <tr key={item.id || index} className="hover:bg-gray-50">
-                        <td className="px-2 sm:px-4 py-2 text-sm text-gray-800 font-medium whitespace-nowrap">
-                          {itemId}
-                        </td>
-                        <td className="px-2 sm:px-4 py-2 text-sm text-gray-800 whitespace-nowrap">
-                          {item.name || `Item ${index + 1}`}
-                        </td>
-                        <td className="px-2 sm:px-4 py-2 text-sm text-gray-700 text-center whitespace-nowrap">
-                          {item.quantity || 1}
-                        </td>
-                        <td className="px-2 sm:px-4 py-2 text-sm text-gray-700 text-right whitespace-nowrap">
-                          {formatPrice(item.price || 0)}
-                        </td>
-                        <td className="px-2 sm:px-4 py-2 text-sm font-semibold text-gray-800 text-right whitespace-nowrap">
-                          {formatPrice(itemTotal)}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                <tbody className="divide-y divide-gray-100">
+                  {normalizedItems.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 flex flex-col">
+                        <span className="text-sm font-bold text-gray-900">{item.name || `Item ${idx + 1}`}</span>
+                        <span className="text-[10px] font-bold text-gray-400 font-mono">{item.id || item.itemId || idx}</span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700 text-center font-bold">{item.quantity}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 text-right font-black">{formatPrice(item.price * item.quantity)}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+              <span className="text-xs font-bold text-gray-500 uppercase">Subtotal</span>
+              <span className="text-lg font-black text-gray-900">{formatPrice(orderTotal)}</span>
+            </div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 };
 
-// OrderActionsDropdown component
+// OrderActionsDropdown component — uses Portal to avoid overflow clipping
 const OrderActionsDropdown = ({
-  order,
-  onOrderDetails,
-  onGenerateInvoice,
-  onOrderTracking,
-  onDeleteOrder,
-  isOpen,
-  onToggle,
-  onClose,
+  order, onOrderDetails, onGenerateInvoice, onOrderTracking, onDeleteOrder, isOpen, onToggle, onClose,
 }) => {
-  const [openUpward, setOpenUpward] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, openUpward: false, ready: false });
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
 
-  // Check available space and determine dropdown direction
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isOpen && buttonRef.current) {
-      const buttonRect = buttonRef.current.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-      const spaceBelow = windowHeight - buttonRect.bottom;
-      const spaceAbove = buttonRect.top;
-      const dropdownHeight = 200; // Estimated dropdown height
+      if (buttonRef.current.offsetParent === null) return;
 
-      // Open upward if not enough space below but enough space above
-      setOpenUpward(spaceBelow < dropdownHeight && spaceAbove > spaceBelow);
+      const updatePosition = () => {
+        const buttonRect = buttonRef.current.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+        const dropdownHeight = 190;
+        const dropdownWidth = 190;
+
+        const spaceBelow = windowHeight - buttonRect.bottom;
+        const spaceAbove = buttonRect.top;
+        const openUpward = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
+
+        setDropdownPos({
+          top: openUpward ? buttonRect.top - 8 : buttonRect.bottom + 8,
+          left: Math.max(8, buttonRect.right - dropdownWidth),
+          openUpward,
+          ready: true
+        });
+      };
+      updatePosition();
+      window.addEventListener("scroll", updatePosition, true);
+      window.addEventListener("resize", updatePosition);
+      return () => {
+        window.removeEventListener("scroll", updatePosition, true);
+        window.removeEventListener("resize", updatePosition);
+      };
+    } else if (!isOpen) {
+      setDropdownPos(prev => ({ ...prev, ready: false }));
     }
   }, [isOpen]);
 
-  // Click outside detection
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        isOpen &&
-        dropdownRef.current &&
-        buttonRef.current &&
-        !dropdownRef.current.contains(event.target) &&
-        !buttonRef.current.contains(event.target)
-      ) {
+    const handleClickOutside = (e) => {
+      if (isOpen && dropdownRef.current && !dropdownRef.current.contains(e.target) && !buttonRef.current?.contains(e.target)) {
         onClose();
       }
     };
-
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       document.addEventListener("touchstart", handleClickOutside);
     }
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
@@ -267,114 +235,63 @@ const OrderActionsDropdown = ({
   }, [isOpen, onClose]);
 
   const menuItems = [
-    {
-      label: "Order Details",
-      icon: FiEye,
-      onClick: () => {
-        onOrderDetails(order.id);
-        onClose();
-      },
-      color: "text-blue-600",
-      hoverBg: "hover:bg-blue-50",
-    },
-    {
-      label: "Generate Invoice",
-      icon: FiFileText,
-      onClick: () => {
-        onGenerateInvoice(order);
-        onClose();
-      },
-      color: "text-green-600",
-      hoverBg: "hover:bg-green-50",
-    },
-    {
-      label: "Order Tracking",
-      icon: FiTruck,
-      onClick: () => {
-        onOrderTracking(order.id);
-        onClose();
-      },
-      color: "text-indigo-600",
-      hoverBg: "hover:bg-indigo-50",
-    },
-    {
-      label: "Delete Order",
-      icon: FiTrash2,
-      onClick: () => {
-        onDeleteOrder(order.id);
-        onClose();
-      },
-      color: "text-red-600",
-      hoverBg: "hover:bg-red-50",
-    },
+    { label: "Order Details", icon: FiEye, color: "text-blue-600", hoverBg: "hover:bg-blue-50", onClick: () => { if (order?.id) onOrderDetails(order.id); onClose(); } },
+    { label: "Generate Invoice", icon: FiFileText, color: "text-green-600", hoverBg: "hover:bg-green-50", onClick: () => { if (order) onGenerateInvoice(order); onClose(); } },
+    { label: "Order Tracking", icon: FiTruck, color: "text-indigo-600", hoverBg: "hover:bg-indigo-50", onClick: () => { if (order?.id) onOrderTracking(order.id); onClose(); } },
+    { label: "Delete Order", icon: FiTrash2, color: "text-red-600", hoverBg: "hover:bg-red-50", onClick: () => { if (order?.id) onDeleteOrder(order.id); onClose(); } },
   ];
 
   return (
     <div className="relative">
       <button
         ref={buttonRef}
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggle();
-        }}
-        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+        onClick={(e) => { e.stopPropagation(); onToggle(); }}
+        className={`p-2 rounded-lg transition-colors ${isOpen ? 'bg-blue-100 text-blue-700' : 'text-blue-600 hover:bg-blue-50'}`}
         title="View Details">
         <FiMoreVertical />
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
+      {isOpen && dropdownPos.ready && ReactDOM.createPortal(
+        <AnimatePresence mode="wait">
           <motion.div
+            key="actions-dropdown"
             ref={dropdownRef}
-            initial={{
-              opacity: 0,
-              y: openUpward ? 10 : -10,
-              scale: 0.95,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-              scale: 1,
-            }}
-            exit={{
-              opacity: 0,
-              y: openUpward ? 10 : -10,
-              scale: 0.95,
-            }}
-            transition={{ duration: 0.2 }}
-            className={`absolute right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 min-w-[180px] overflow-hidden ${
-              openUpward ? "bottom-full mb-2" : "top-full mt-2"
-            }`}
+            initial={{ opacity: 0, y: dropdownPos.openUpward ? 10 : -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="fixed z-[10000] bg-white rounded-xl shadow-2xl border border-gray-100 min-w-[190px] overflow-hidden"
             style={{
-              transformOrigin: openUpward ? "bottom right" : "top right",
+              top: dropdownPos.openUpward ? undefined : `${dropdownPos.top}px`,
+              bottom: dropdownPos.openUpward ? `${window.innerHeight - dropdownPos.top}px` : undefined,
+              left: `${dropdownPos.left}px`,
+              transformOrigin: dropdownPos.openUpward ? "bottom right" : "top right",
             }}>
-            <div className="py-1">
-              {menuItems.map((item, index) => {
+            <div className="py-1.5">
+              {menuItems.map((item, idx) => {
                 const Icon = item.icon;
                 return (
                   <button
-                    key={index}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      item.onClick();
-                    }}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${item.color} ${item.hoverBg}`}>
-                    <Icon className="text-base" />
+                    key={idx}
+                    onClick={(e) => { e.stopPropagation(); item.onClick(); }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${item.color} ${item.hoverBg}`}>
+                    <Icon className="text-base shrink-0" />
                     <span>{item.label}</span>
                   </button>
                 );
               })}
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 };
 
 const AllOrders = () => {
   const navigate = useNavigate();
-  const [orders, setOrders] = useState([]);
+  const { orders, deleteOrder } = useOrderStore(); // Use global store
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [dateRange, setDateRange] = useState({
@@ -387,17 +304,6 @@ const AllOrders = () => {
     orderId: null,
   });
 
-  useEffect(() => {
-    const savedOrders = localStorage.getItem("admin-orders");
-    if (savedOrders) {
-      setOrders(JSON.parse(savedOrders));
-    } else {
-      setOrders(mockOrders);
-      localStorage.setItem("admin-orders", JSON.stringify(mockOrders));
-    }
-  }, []);
-
-  // Calculate order status counts
   const orderStats = useMemo(() => {
     const stats = {
       awaiting: 0,
@@ -412,23 +318,13 @@ const AllOrders = () => {
 
     orders.forEach((order) => {
       const status = order.status?.toLowerCase() || "";
-
-      // Map statuses to our categories
-      if (status === "pending" || status === "awaiting") {
-        stats.awaiting++;
-      } else if (status === "received") {
-        stats.received++;
-      } else if (status === "processing" || status === "processed") {
-        stats.processed++;
-      } else if (status === "shipped") {
-        stats.shipped++;
-      } else if (status === "delivered") {
-        stats.delivered++;
-      } else if (status === "cancelled" || status === "canceled") {
-        stats.cancelled++;
-      } else if (status === "returned") {
-        stats.returned++;
-      }
+      if (status === "pending" || status === "awaiting") stats.awaiting++;
+      else if (status === "received") stats.received++;
+      else if (status === "processing" || status === "processed") stats.processed++;
+      else if (status === "shipped") stats.shipped++;
+      else if (status === "delivered") stats.delivered++;
+      else if (status === "cancelled" || status === "canceled") stats.cancelled++;
+      else if (status === "returned") stats.returned++;
     });
 
     return stats;
@@ -436,15 +332,12 @@ const AllOrders = () => {
 
   const filteredOrders = useMemo(() => {
     let filtered = orders;
-
     if (searchQuery) {
       filtered = filtered.filter(
         (order) =>
           order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          order.customer.name
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          order.customer.email.toLowerCase().includes(searchQuery.toLowerCase())
+          order.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          order.customer?.email?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -452,12 +345,10 @@ const AllOrders = () => {
       filtered = filtered.filter((order) => order.status === selectedStatus);
     }
 
-    // Filter by date range
     if (dateRange.startDate || dateRange.endDate) {
       filtered = filtered.filter((order) => {
         const orderDate = new Date(order.date);
         orderDate.setHours(0, 0, 0, 0);
-
         if (dateRange.startDate && dateRange.endDate) {
           const startDate = new Date(dateRange.startDate);
           startDate.setHours(0, 0, 0, 0);
@@ -476,11 +367,9 @@ const AllOrders = () => {
         return true;
       });
     }
-
     return filtered;
   }, [orders, searchQuery, selectedStatus, dateRange]);
 
-  // Helper function to format payment method
   const formatPaymentMethod = (method) => {
     if (!method) return "N/A";
     const methodMap = {
@@ -496,49 +385,27 @@ const AllOrders = () => {
     );
   };
 
-  // Helper function to calculate final total
   const calculateFinalTotal = (order) => {
-    if (order.finalTotal !== undefined) {
-      return order.finalTotal;
-    }
+    if (order.finalTotal !== undefined) return order.finalTotal;
     const total = order.total || 0;
     const tax = order.tax || 0;
     const discount = order.discount || 0;
     return total + tax - discount;
   };
 
-  // Handler functions for order actions
-  const handleOrderDetails = (orderId) => {
-    navigate(`/admin/orders/${orderId}`);
-  };
-
-  const handleGenerateInvoice = (order) => {
-    navigate(`/admin/orders/${order.id}/invoice`);
-  };
-
-  const handleOrderTracking = (orderId) => {
-    navigate(`/admin/orders/order-tracking?orderId=${orderId}`);
-  };
-
-  const handleDeleteOrder = (orderId) => {
-    setDeleteModal({ isOpen: true, orderId });
-  };
+  const handleOrderDetails = (orderId) => navigate(`/admin/orders/detail/${orderId}`);
+  const handleGenerateInvoice = (order) => navigate(`/admin/orders/invoice/${order.id}`);
+  const handleOrderTracking = (orderId) => navigate(`/admin/orders/order-tracking?orderId=${orderId}`);
+  const handleDeleteOrder = (orderId) => setDeleteModal({ isOpen: true, orderId });
 
   const confirmDeleteOrder = () => {
-    const updatedOrders = orders.filter((o) => o.id !== deleteModal.orderId);
-    setOrders(updatedOrders);
-    localStorage.setItem("admin-orders", JSON.stringify(updatedOrders));
+    deleteOrder(deleteModal.orderId);
     setDeleteModal({ isOpen: false, orderId: null });
     toast.success("Order deleted successfully");
   };
 
-  const handleDropdownToggle = (orderId) => {
-    setOpenDropdownId(openDropdownId === orderId ? null : orderId);
-  };
-
-  const handleDropdownClose = () => {
-    setOpenDropdownId(null);
-  };
+  const handleDropdownToggle = (orderId) => setOpenDropdownId(openDropdownId === orderId ? null : orderId);
+  const handleDropdownClose = () => setOpenDropdownId(null);
 
   const columns = [
     {
@@ -553,8 +420,8 @@ const AllOrders = () => {
       sortable: true,
       render: (value) => (
         <div>
-          <p className="font-medium text-gray-800">{value.name}</p>
-          <p className="text-xs text-gray-500">{value.email}</p>
+          <p className="font-medium text-gray-800">{value?.name || 'Guest'}</p>
+          <p className="text-xs text-gray-500">{value?.email || 'No email'}</p>
         </div>
       ),
     },
@@ -568,7 +435,7 @@ const AllOrders = () => {
     },
     {
       key: "total",
-      label: "Total ($)",
+      label: "Total",
       sortable: true,
       render: (value) => (
         <span className="font-bold text-gray-800">{formatCurrency(value)}</span>
@@ -576,7 +443,7 @@ const AllOrders = () => {
     },
     {
       key: "finalTotal",
-      label: "Final Total ($)",
+      label: "Final Total",
       sortable: true,
       render: (value, row) => {
         const finalTotal = calculateFinalTotal(row);
@@ -622,110 +489,38 @@ const AllOrders = () => {
     },
   ];
 
-  // Order status cards configuration
   const statusCards = [
-    {
-      title: "Awaiting",
-      value: orderStats.awaiting,
-      icon: FiClock,
-      bgColor: "bg-gradient-to-br from-yellow-500 to-amber-600",
-      cardBg: "bg-gradient-to-br from-yellow-50 to-amber-50",
-    },
-    {
-      title: "Received",
-      value: orderStats.received,
-      icon: FiCheckCircle,
-      bgColor: "bg-gradient-to-br from-blue-500 to-cyan-600",
-      cardBg: "bg-gradient-to-br from-blue-50 to-cyan-50",
-    },
-    {
-      title: "Processed",
-      value: orderStats.processed,
-      icon: FiPackage,
-      bgColor: "bg-gradient-to-br from-indigo-500 to-purple-600",
-      cardBg: "bg-gradient-to-br from-indigo-50 to-purple-50",
-    },
-    {
-      title: "Shipped",
-      value: orderStats.shipped,
-      icon: FiTruck,
-      bgColor: "bg-gradient-to-br from-blue-500 to-indigo-600",
-      cardBg: "bg-gradient-to-br from-blue-50 to-indigo-50",
-    },
-    {
-      title: "Delivered",
-      value: orderStats.delivered,
-      icon: FiCheckCircle,
-      bgColor: "bg-gradient-to-br from-green-500 to-emerald-600",
-      cardBg: "bg-gradient-to-br from-green-50 to-emerald-50",
-    },
-    {
-      title: "Cancelled",
-      value: orderStats.cancelled,
-      icon: FiXCircle,
-      bgColor: "bg-gradient-to-br from-red-500 to-rose-600",
-      cardBg: "bg-gradient-to-br from-red-50 to-rose-50",
-    },
-    {
-      title: "Returned",
-      value: orderStats.returned,
-      icon: FiRotateCw,
-      bgColor: "bg-gradient-to-br from-orange-500 to-amber-600",
-      cardBg: "bg-gradient-to-br from-orange-50 to-amber-50",
-    },
-    {
-      title: "Total Orders",
-      value: orderStats.total,
-      icon: FiShoppingBag,
-      bgColor: "bg-gradient-to-br from-gray-600 to-gray-800",
-      cardBg: "bg-gradient-to-br from-gray-50 to-gray-100",
-    },
+    { title: "Awaiting", value: orderStats.awaiting, icon: FiClock, bgColor: "bg-gradient-to-br from-yellow-500 to-amber-600", cardBg: "bg-gradient-to-br from-yellow-50 to-amber-50" },
+    { title: "Received", value: orderStats.received, icon: FiCheckCircle, bgColor: "bg-gradient-to-br from-blue-500 to-cyan-600", cardBg: "bg-gradient-to-br from-blue-50 to-cyan-50" },
+    { title: "Processed", value: orderStats.processed, icon: FiPackage, bgColor: "bg-gradient-to-br from-indigo-500 to-purple-600", cardBg: "bg-gradient-to-br from-indigo-50 to-purple-50" },
+    { title: "Shipped", value: orderStats.shipped, icon: FiTruck, bgColor: "bg-gradient-to-br from-blue-500 to-indigo-600", cardBg: "bg-gradient-to-br from-blue-50 to-indigo-50" },
+    { title: "Delivered", value: orderStats.delivered, icon: FiCheckCircle, bgColor: "bg-gradient-to-br from-green-500 to-emerald-600", cardBg: "bg-gradient-to-br from-green-50 to-emerald-50" },
+    { title: "Cancelled", value: orderStats.cancelled, icon: FiXCircle, bgColor: "bg-gradient-to-br from-red-500 to-rose-600", cardBg: "bg-gradient-to-br from-red-50 to-rose-50" },
+    { title: "Returned", value: orderStats.returned, icon: FiRotateCw, bgColor: "bg-gradient-to-br from-orange-500 to-amber-600", cardBg: "bg-gradient-to-br from-orange-50 to-amber-50" },
+    { title: "Total Orders", value: orderStats.total, icon: FiShoppingBag, bgColor: "bg-gradient-to-br from-gray-600 to-gray-800", cardBg: "bg-gradient-to-br from-gray-50 to-gray-100" },
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="lg:hidden">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
-            All Orders
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            View and manage all customer orders
-          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">All Orders</h1>
+          <p className="text-sm sm:text-base text-gray-600">View and manage all customer orders</p>
         </div>
       </div>
 
-      {/* Order Status Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-4">
         {statusCards.map((card, index) => {
           const Icon = card.icon;
           return (
-            <motion.div
-              key={card.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className={`${card.cardBg} rounded-xl p-3 sm:p-4 shadow-md border-2 border-transparent hover:shadow-lg transition-all duration-300 relative overflow-hidden`}>
-              {/* Decorative gradient overlay */}
-              <div
-                className={`absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 ${card.bgColor} opacity-10 rounded-full -mr-12 -mt-12 sm:-mr-16 sm:-mt-16`}></div>
-
+            <motion.div key={card.title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className={`${card.cardBg} rounded-xl p-3 sm:p-4 shadow-md border-2 border-transparent hover:shadow-lg transition-all duration-300 relative overflow-hidden`}>
+              <div className={`absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 ${card.bgColor} opacity-10 rounded-full -mr-12 -mt-12 sm:-mr-16 sm:-mt-16`}></div>
               <div className="flex items-center justify-between mb-2 sm:mb-3 relative z-10">
-                <div
-                  className={`${card.bgColor} bg-white/20 p-2 sm:p-2.5 rounded-lg shadow-md`}>
-                  <Icon className="text-white text-base sm:text-lg" />
-                </div>
+                <div className={`${card.bgColor} bg-white/20 p-2 sm:p-2.5 rounded-lg shadow-md`}><Icon className="text-white text-base sm:text-lg" /></div>
               </div>
               <div className="relative z-10">
-                <h3 className="text-gray-600 text-xs sm:text-sm font-medium mb-1">
-                  {card.title}
-                </h3>
-                <p className="text-gray-800 text-lg sm:text-xl font-bold">
-                  {card.value.toLocaleString()}
-                </p>
+                <h3 className="text-gray-600 text-xs sm:text-sm font-medium mb-1">{card.title}</h3>
+                <p className="text-gray-800 text-lg sm:text-xl font-bold">{card.value.toLocaleString()}</p>
               </div>
             </motion.div>
           );
@@ -736,128 +531,30 @@ const AllOrders = () => {
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
           <div className="relative flex-1 w-full sm:min-w-[200px]">
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by ID, name, or email..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base"
-            />
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by ID, name, or email..." className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base" />
           </div>
-
-          <AnimatedSelect
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            options={[
-              { value: "all", label: "All Status" },
-              { value: "pending", label: "Pending" },
-              { value: "processing", label: "Processing" },
-              { value: "shipped", label: "Shipped" },
-              { value: "delivered", label: "Delivered" },
-              { value: "cancelled", label: "Cancelled" },
-            ]}
-            className="w-full sm:w-auto min-w-[140px]"
-          />
-
-          {/* Date Range Selector */}
+          <AnimatedSelect value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} options={[{ value: "all", label: "All Status" }, { value: "pending", label: "Pending" }, { value: "processing", label: "Processing" }, { value: "shipped", label: "Shipped" }, { value: "delivered", label: "Delivered" }, { value: "cancelled", label: "Cancelled" }]} className="w-full sm:w-auto min-w-[140px]" />
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <div className="flex items-center gap-2 flex-1 sm:flex-initial">
               <div className="relative flex-1 sm:flex-initial">
                 <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <input
-                  type="date"
-                  value={dateRange.startDate}
-                  onChange={(e) =>
-                    setDateRange({ ...dateRange, startDate: e.target.value })
-                  }
-                  max={dateRange.endDate || undefined}
-                  className="w-full sm:w-auto pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base min-w-[140px]"
-                  placeholder="Start Date"
-                />
+                <input type="date" value={dateRange.startDate} onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })} max={dateRange.endDate || undefined} className="w-full sm:w-auto pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base min-w-[140px]" />
               </div>
               <span className="text-gray-500 hidden sm:inline">to</span>
               <div className="relative flex-1 sm:flex-initial">
-                <input
-                  type="date"
-                  value={dateRange.endDate}
-                  onChange={(e) =>
-                    setDateRange({ ...dateRange, endDate: e.target.value })
-                  }
-                  min={dateRange.startDate || undefined}
-                  className="w-full sm:w-auto px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base min-w-[140px]"
-                  placeholder="End Date"
-                />
+                <input type="date" value={dateRange.endDate} onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })} min={dateRange.startDate || undefined} className="w-full sm:w-auto px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base min-w-[140px]" />
               </div>
-              {(dateRange.startDate || dateRange.endDate) && (
-                <button
-                  onClick={() => setDateRange({ startDate: "", endDate: "" })}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Clear Date Range">
-                  <FiX className="text-lg" />
-                </button>
-              )}
+              {(dateRange.startDate || dateRange.endDate) && <button onClick={() => setDateRange({ startDate: "", endDate: "" })} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><FiX className="text-lg" /></button>}
             </div>
           </div>
-
           <div className="w-full sm:w-auto">
-            <ExportButton
-              data={filteredOrders}
-              headers={[
-                { label: "Order ID", accessor: (row) => row.id },
-                { label: "Customer", accessor: (row) => row.customer.name },
-                { label: "Email", accessor: (row) => row.customer.email },
-                {
-                  label: "Items",
-                  accessor: (row) => {
-                    if (Array.isArray(row.items)) {
-                      return row.items
-                        .map((item) => `${item.name} (Qty: ${item.quantity})`)
-                        .join(", ");
-                    }
-                    return `${row.items} items`;
-                  },
-                },
-                {
-                  label: "Total ($)",
-                  accessor: (row) => formatCurrency(row.total || 0),
-                },
-                {
-                  label: "Final Total ($)",
-                  accessor: (row) => formatCurrency(calculateFinalTotal(row)),
-                },
-                {
-                  label: "Payment",
-                  accessor: (row) => formatPaymentMethod(row.paymentMethod),
-                },
-                {
-                  label: "Order Date",
-                  accessor: (row) => formatDateTime(row.date),
-                },
-                { label: "Status", accessor: (row) => row.status },
-              ]}
-              filename="all-orders"
-            />
+            <ExportButton data={filteredOrders} headers={[{ label: "Order ID", accessor: (row) => row.id }, { label: "Customer", accessor: (row) => row.customer?.name }, { label: "Email", accessor: (row) => row.customer?.email }, { label: "Items", accessor: (row) => Array.isArray(row.items) ? row.items.map((item) => `${item.name} (Qty: ${item.quantity})`).join(", ") : `${row.items} items` }, { label: "Total", accessor: (row) => formatCurrency(row.total || 0) }, { label: "Final Total", accessor: (row) => formatCurrency(calculateFinalTotal(row)) }, { label: "Payment", accessor: (row) => formatPaymentMethod(row.paymentMethod) }, { label: "Order Date", accessor: (row) => formatDateTime(row.date) }, { label: "Status", accessor: (row) => row.status }]} filename="all-orders" />
           </div>
         </div>
       </div>
 
-      <DataTable
-        data={filteredOrders}
-        columns={columns}
-        pagination={true}
-        itemsPerPage={10}
-      />
-
-      <ConfirmModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, orderId: null })}
-        onConfirm={confirmDeleteOrder}
-        title="Delete Order?"
-        message="Are you sure you want to delete this order? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
-        type="danger"
-      />
+      <DataTable data={filteredOrders} columns={columns} pagination={true} itemsPerPage={10} />
+      <ConfirmModal isOpen={deleteModal.isOpen} onClose={() => setDeleteModal({ isOpen: false, orderId: null })} onConfirm={confirmDeleteOrder} title="Delete Order?" message="Are you sure you want to delete this order? This action cannot be undone." confirmText="Delete" cancelText="Cancel" type="danger" />
     </motion.div>
   );
 };

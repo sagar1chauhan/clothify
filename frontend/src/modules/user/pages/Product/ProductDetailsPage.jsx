@@ -16,7 +16,9 @@ import {
     Info,
     MapPin,
     X,
-    CheckCircle2
+    CheckCircle2,
+    Tag,
+    Ticket
 } from 'lucide-react';
 import { products } from '../../data';
 import { useCart } from '../../context/CartContext';
@@ -24,9 +26,13 @@ import { useWishlist } from '../../context/WishlistContext';
 import LocationModal from '../../components/Header/LocationModal';
 import { useLocation as useLocationContext } from '../../context/LocationContext';
 
+import { useAuth } from '../../context/AuthContext';
+import LoginModal from '../../components/Modals/LoginModal';
+
 const ProductDetailsPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const { addToCart, cart, getCartCount } = useCart();
     const { toggleWishlist, isInWishlist } = useWishlist();
     const { activeAddress } = useLocationContext();
@@ -36,18 +42,57 @@ const ProductDetailsPage = () => {
     const [activeImg, setActiveImg] = useState(0);
     const [openAccordion, setOpenAccordion] = useState('description');
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isSizeChartOpen, setIsSizeChartOpen] = useState(false); // Modal state
     const [showAddedToast, setShowAddedToast] = useState(false);
+    const [promoCodes, setPromoCodes] = useState([]);
+    const [copiedCode, setCopiedCode] = useState(null);
+
+    const [allProducts, setAllProducts] = useState([...products]);
 
     useEffect(() => {
-        const foundProduct = products.find(p => p.id === parseInt(id));
+        // Merge admin products with static products
+        const savedProducts = localStorage.getItem('admin-products');
+        let currentProducts = [...products];
+
+        if (savedProducts) {
+            const parsedProducts = JSON.parse(savedProducts);
+            // Combine arrays (admin products usually have higher IDs or distinct IDs)
+            currentProducts = [...parsedProducts, ...products];
+            // Remove duplicates if any (based on ID)
+            currentProducts = Array.from(new Map(currentProducts.map(item => [item.id, item])).values());
+        }
+        setAllProducts(currentProducts);
+
+        const foundProduct = currentProducts.find(p => p.id === parseInt(id) || p.id === id);
         if (foundProduct) {
             setProduct(foundProduct);
         } else {
-            navigate('/products');
+            // Only navigate away if we are sure we loaded everything and still didn't find it
+            // navigate('/products'); 
+            // Commenting out navigate to avoid redirect loops during development if ids don't match
         }
         window.scrollTo(0, 0);
-    }, [id, navigate]);
+    }, [id]);
+
+    useEffect(() => {
+        const savedCodes = localStorage.getItem('admin-promocodes');
+        if (savedCodes) {
+            const parsedCodes = JSON.parse(savedCodes);
+            const now = new Date();
+            const activeCodes = parsedCodes.filter(code =>
+                code.status === 'active' &&
+                new Date(code.endDate) > now
+            );
+            setPromoCodes(activeCodes);
+        }
+    }, []);
+
+    const copyCode = (code) => {
+        navigator.clipboard.writeText(code);
+        setCopiedCode(code);
+        setTimeout(() => setCopiedCode(null), 2000);
+    };
 
     if (!product) return (
         <div className="flex items-center justify-center min-h-screen">
@@ -56,6 +101,14 @@ const ProductDetailsPage = () => {
     );
 
     const handleAddToCart = () => {
+        console.log("ProductDetailsPage: handleAddToCart called. User:", user);
+
+        if (!user) {
+            console.log("User is null. Opening LoginModal.");
+            setIsLoginModalOpen(true);
+            return;
+        }
+
         if (!selectedSize) {
             alert('Please select a size first');
             return;
@@ -77,13 +130,16 @@ const ProductDetailsPage = () => {
         "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&fit=crop"
     ];
 
-    const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+    // Use product variants if available, otherwise fallback to default
+    const sizes = product.variants?.sizes?.length > 0
+        ? product.variants.sizes
+        : ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
     // Cart count logic
     const cartCount = getCartCount();
 
     return (
-        <div className="bg-[#fafafa] min-h-screen pb-20">
+        <div className="bg-[#fafafa] min-h-screen pb-20 overflow-x-hidden">
             {/* Universal Header - Mimics Mobile View for consistency */}
             <div className="sticky top-0 bg-white/95 backdrop-blur-md z-[100] border-b border-gray-100 shadow-sm">
                 <div className="container mx-auto flex items-center justify-between px-4 py-4">
@@ -142,18 +198,27 @@ const ProductDetailsPage = () => {
                 onClose={() => setIsLocationModalOpen(false)}
             />
 
+            <LoginModal
+                isOpen={isLoginModalOpen}
+                onClose={() => setIsLoginModalOpen(false)}
+                onSuccess={() => {
+                    // Optionally continue with add to cart if desired, or just let them click again
+                    setIsLoginModalOpen(false);
+                }}
+            />
+
             <div className="container mx-auto px-4 py-4 md:py-6">
                 <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
 
                     {/* Left: Image Gallery */}
-                    <div className="flex-1 lg:flex-[0.8] flex flex-col md:flex-row gap-4">
+                    <div className="flex-1 lg:flex-[1.2] w-full flex flex-col gap-6 lg:sticky lg:top-28">
                         {/* Thumbnails - Desktop */}
-                        <div className="hidden md:flex flex-col gap-3 w-20 shrink-0">
+                        <div className="hidden md:flex flex-row gap-4 w-full overflow-x-auto py-2">
                             {productImages.map((img, idx) => (
                                 <div
                                     key={idx}
                                     onClick={() => setActiveImg(idx)}
-                                    className={`aspect-[3/4] rounded-xl overflow-hidden cursor-pointer transition-all border-2 ${activeImg === idx ? 'border-black shadow-lg scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                    className={`w-24 aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer transition-all border-2 shrink-0 ${activeImg === idx ? 'border-black shadow-lg scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
                                 >
                                     <img src={img} alt="" className="w-full h-full object-cover" />
                                 </div>
@@ -161,8 +226,8 @@ const ProductDetailsPage = () => {
                         </div>
 
                         {/* Main Image */}
-                        <div className="flex-1 relative aspect-[3/4] lg:aspect-auto lg:h-[580px] rounded-[32px] md:rounded-[40px] overflow-hidden bg-white shadow-2xl group">
-                            <img src={productImages[activeImg]} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                        <div className="flex-1 relative aspect-[3/4] lg:aspect-auto lg:h-[calc(100vh-280px)] lg:min-h-[650px] lg:max-h-[900px] rounded-[32px] md:rounded-[40px] overflow-hidden bg-white shadow-2xl group">
+                            <img src={productImages[activeImg]} alt={product.name} className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105" />
 
                             {/* Tags/Badges */}
                             <div className="absolute top-6 left-6 flex flex-col gap-2">
@@ -195,7 +260,7 @@ const ProductDetailsPage = () => {
                     </div>
 
                     {/* Right: Product Info */}
-                    <div className="flex-1 max-w-xl">
+                    <div className="flex-1 w-full max-w-2xl">
                         <div className="mb-6">
                             <div className="flex items-center justify-between mb-1.5">
                                 <h2 className="text-[13px] font-black text-gray-400 uppercase tracking-[0.2em]">{product.brand}</h2>
@@ -212,14 +277,22 @@ const ProductDetailsPage = () => {
                             <h1 className="text-xl md:text-2xl lg:text-3xl font-black text-black leading-tight mb-4 uppercase tracking-tight">{product.name}</h1>
 
                             <div className="flex items-center gap-4 mb-2">
-                                <span className="text-3xl font-black text-black">₹{product.discountedPrice}</span>
+                                <span className="text-3xl font-black text-black">
+                                    ₹{product.discountedPrice !== undefined ? product.discountedPrice : product.price}
+                                </span>
                                 <div className="flex flex-col">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-lg text-gray-400 line-through">₹{product.originalPrice}</span>
-                                        <span className="text-emerald-600 font-black text-sm bg-emerald-50 px-2.5 py-1 rounded-lg">
-                                            {product.discount} OFF
-                                        </span>
-                                    </div>
+                                    {(product.originalPrice || product.price) && (
+                                        <div className="flex items-center gap-2">
+                                            {product.originalPrice && (
+                                                <span className="text-lg text-gray-400 line-through">₹{product.originalPrice}</span>
+                                            )}
+                                            {(product.discount || (product.originalPrice && (product.discountedPrice || product.price) && product.originalPrice > (product.discountedPrice || product.price))) && (
+                                                <span className="text-emerald-600 font-black text-sm bg-emerald-50 px-2.5 py-1 rounded-lg">
+                                                    {product.discount || `${Math.round(((product.originalPrice - (product.discountedPrice || product.price)) / product.originalPrice) * 100)}% OFF`}
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
                                     <p className="text-[11px] font-bold text-gray-500 mt-1 uppercase tracking-wider italic">inclusive of all taxes</p>
                                 </div>
                             </div>
@@ -302,6 +375,66 @@ const ProductDetailsPage = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Promo Codes / Available Offers */}
+                        {promoCodes.length > 0 && (
+                            <div className="mb-10 animate-fadeIn overflow-hidden">
+                                <div className="flex items-center justify-between mb-5">
+                                    <h3 className="text-[12px] font-black uppercase tracking-widest text-black flex items-center gap-2">
+                                        Available Offers <Ticket size={14} className="text-emerald-500" />
+                                    </h3>
+                                </div>
+                                <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar snap-x -mx-4 px-4 sm:mx-0 sm:px-0">
+                                    {promoCodes.map((promo) => (
+                                        <div
+                                            key={promo.id}
+                                            className="min-w-[240px] bg-white border border-gray-100 rounded-[24px] p-5 snap-start relative overflow-hidden group hover:shadow-xl transition-all duration-500 border-l-4 border-l-emerald-500"
+                                        >
+                                            {/* Decorative Background Element */}
+                                            <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-50/50 rounded-full group-hover:scale-150 transition-transform duration-700 -z-0" />
+
+                                            <div className="relative z-10">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <Tag size={12} className="text-emerald-500" />
+                                                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">
+                                                        {promo.type === 'percentage' ? `${promo.value}% Savings` : `₹${promo.value} Discount`}
+                                                    </span>
+                                                </div>
+
+                                                <h4 className="text-[16px] font-black text-black mb-1 flex items-center gap-2">
+                                                    {promo.code}
+                                                </h4>
+
+                                                <p className="text-[11px] font-bold text-gray-500 mb-4 line-clamp-1">
+                                                    Valid on orders above ₹{promo.minPurchase}
+                                                </p>
+
+                                                <button
+                                                    onClick={() => copyCode(promo.code)}
+                                                    className={`w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.1em] transition-all flex items-center justify-center gap-2 ${copiedCode === promo.code
+                                                        ? 'bg-emerald-500 text-white border-emerald-500'
+                                                        : 'bg-black text-white hover:bg-[#1a1a1a] shadow-lg'
+                                                        }`}
+                                                >
+                                                    {copiedCode === promo.code ? (
+                                                        <>
+                                                            <Check size={12} strokeWidth={4} />
+                                                            Copied!
+                                                        </>
+                                                    ) : (
+                                                        'Copy Code'
+                                                    )}
+                                                </button>
+                                            </div>
+
+                                            {/* Ticket Holes */}
+                                            <div className="absolute top-1/2 -left-2 w-4 h-4 bg-[#fafafa] rounded-full border border-gray-100 -translate-y-1/2" />
+                                            <div className="absolute top-1/2 -right-2 w-4 h-4 bg-[#fafafa] rounded-full border border-gray-100 -translate-y-1/2" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Details Accordion */}
                         <div className="space-y-1">

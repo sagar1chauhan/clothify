@@ -22,7 +22,13 @@ export const mockOrders = [
         date: new Date().toISOString(),
         total: 12500,
         status: 'delivered',
-        items: 3,
+        items: [
+            { id: 1, name: 'Premium Cotton T-Shirt', quantity: 2, price: 2500, vendorId: 1, image: 'https://placehold.co/100x100' },
+            { id: 2, name: 'Slim Fit Denim Jeans', quantity: 1, price: 7500, vendorId: 1, image: 'https://placehold.co/100x100' }
+        ],
+        vendorItems: [
+            { vendorId: 1, subtotal: 12500, commission: 1250, items: [1, 2] }
+        ]
     },
     {
         id: 'ORD-002',
@@ -30,7 +36,12 @@ export const mockOrders = [
         date: new Date(Date.now() - 86400000).toISOString(),
         total: 8200,
         status: 'processing',
-        items: 2,
+        items: [
+            { id: 3, name: 'Classic Leather Jacket', quantity: 1, price: 8200, vendorId: 2, image: 'https://placehold.co/100x100' }
+        ],
+        vendorItems: [
+            { vendorId: 2, subtotal: 8200, commission: 820, items: [3] }
+        ]
     },
     {
         id: 'ORD-003',
@@ -38,7 +49,12 @@ export const mockOrders = [
         date: new Date(Date.now() - 172800000).toISOString(),
         total: 15400,
         status: 'pending',
-        items: 5,
+        items: [
+            { id: 4, name: 'Summer Dress', quantity: 2, price: 15400, vendorId: 1, image: 'https://placehold.co/100x100' }
+        ],
+        vendorItems: [
+            { vendorId: 1, subtotal: 15400, commission: 1540, items: [4] }
+        ]
     },
 ];
 
@@ -91,8 +107,8 @@ export const mockCustomers = [
 ];
 
 export const mockVendors = [
-    { id: 'VEN-001', name: 'Fashion Hub', email: 'contact@fashionhub.com', phone: '+91 0000000001', products: 45, rating: 4.5, status: 'active' },
-    { id: 'VEN-002', name: 'Elite Apparels', email: 'info@elite.com', phone: '+91 0000000002', products: 120, rating: 4.8, status: 'active' }
+    { id: 1, name: 'Fashion Hub', email: 'contact@fashionhub.com', phone: '+91 0000000001', products: 45, rating: 4.5, status: 'active', commissionRate: 0.1 },
+    { id: 2, name: 'Elite Apparels', email: 'info@elite.com', phone: '+91 0000000002', products: 120, rating: 4.8, status: 'active', commissionRate: 0.12 }
 ];
 
 export const mockReviews = [

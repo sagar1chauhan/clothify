@@ -9,28 +9,42 @@ import toast from 'react-hot-toast';
 const AttributeSets = () => {
   const location = useLocation();
   const isAppRoute = location.pathname.startsWith('/app');
-  const [attributeSets, setAttributeSets] = useState([
-    { id: 1, name: 'Color Set', attributes: ['Red', 'Blue', 'Green'], status: 'active' },
-    { id: 2, name: 'Size Set', attributes: ['S', 'M', 'L', 'XL'], status: 'active' },
-    { id: 3, name: 'Material Set', attributes: ['Cotton', 'Polyester', 'Wool'], status: 'active' },
-  ]);
+  // Load attribute sets from localStorage or use default
+  const [attributeSets, setAttributeSets] = useState(() => {
+    const savedSets = localStorage.getItem('admin-attribute-sets');
+    return savedSets ? JSON.parse(savedSets) : [
+      { id: 1, name: 'Color Set', attributes: ['Red', 'Blue', 'Green'], status: 'active' },
+      { id: 2, name: 'Size Set', attributes: ['S', 'M', 'L', 'XL'], status: 'active' },
+      { id: 3, name: 'Material Set', attributes: ['Cotton', 'Polyester', 'Wool'], status: 'active' },
+    ];
+  });
   const [editingSet, setEditingSet] = useState(null);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
 
+  // Helper to save to localStorage
+  const saveToStorage = (sets) => {
+    localStorage.setItem('admin-attribute-sets', JSON.stringify(sets));
+  };
+
   const handleSave = (setData) => {
+    let newSets;
     if (editingSet && editingSet.id) {
-      setAttributeSets(attributeSets.map((s) => (s.id === editingSet.id ? { ...setData, id: editingSet.id } : s)));
+      newSets = attributeSets.map((s) => (s.id === editingSet.id ? { ...setData, id: editingSet.id } : s));
       toast.success('Attribute set updated');
     } else {
       const newId = attributeSets.length > 0 ? Math.max(...attributeSets.map(s => s.id)) + 1 : 1;
-      setAttributeSets([...attributeSets, { ...setData, id: newId }]);
+      newSets = [...attributeSets, { ...setData, id: newId }];
       toast.success('Attribute set added');
     }
+    setAttributeSets(newSets);
+    saveToStorage(newSets);
     setEditingSet(null);
   };
 
   const handleDelete = () => {
-    setAttributeSets(attributeSets.filter((s) => s.id !== deleteModal.id));
+    const newSets = attributeSets.filter((s) => s.id !== deleteModal.id);
+    setAttributeSets(newSets);
+    saveToStorage(newSets);
     setDeleteModal({ isOpen: false, id: null });
     toast.success('Attribute set deleted');
   };

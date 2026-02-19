@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { FiArrowLeft, FiDownload, FiPrinter } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { formatPrice } from "../../../../shared/utils/helpers";
-import { mockOrders } from "../../../../data/adminMockData";
+import { useOrderStore } from "../../../../shared/store/orderStore";
 import { useSettingsStore } from "../../../../shared/store/settingsStore";
 import toast from "react-hot-toast";
 import { appLogo } from "../../../../data/logos";
@@ -12,23 +12,23 @@ const logoImage = appLogo.src;
 const Invoice = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { getOrderById, orders: allOrders } = useOrderStore(); // Use Order Store
   const [order, setOrder] = useState(null);
   const { settings } = useSettingsStore();
   const storeLogo = settings?.general?.storeLogo || logoImage;
   const storeName = settings?.general?.storeName || "Appzeto E-commerce";
 
   useEffect(() => {
-    const savedOrders = localStorage.getItem("admin-orders");
-    const orders = savedOrders ? JSON.parse(savedOrders) : mockOrders;
-    const foundOrder = orders.find((o) => o.id === id);
-
-    if (foundOrder) {
-      setOrder(foundOrder);
-    } else {
-      toast.error("Order not found");
-      navigate("/admin/orders/all-orders");
+    if (id) {
+      const foundOrder = getOrderById(id);
+      if (foundOrder) {
+        setOrder(foundOrder);
+      } else {
+        toast.error("Order not found");
+        navigate("/admin/orders/all-orders");
+      }
     }
-  }, [id, navigate]);
+  }, [id, allOrders, getOrderById, navigate]);
 
   if (!order) {
     return (

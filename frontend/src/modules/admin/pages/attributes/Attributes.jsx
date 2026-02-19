@@ -10,29 +10,43 @@ import toast from 'react-hot-toast';
 const Attributes = () => {
   const location = useLocation();
   const isAppRoute = location.pathname.startsWith('/app');
-  const [attributes, setAttributes] = useState([
-    { id: 1, name: 'Color', type: 'select', required: true, status: 'active' },
-    { id: 2, name: 'Size', type: 'select', required: true, status: 'active' },
-    { id: 3, name: 'Material', type: 'select', required: false, status: 'active' },
-    { id: 4, name: 'Weight', type: 'text', required: false, status: 'active' },
-  ]);
+  // Load attributes from localStorage or use default
+  const [attributes, setAttributes] = useState(() => {
+    const savedAttributes = localStorage.getItem('admin-attributes');
+    return savedAttributes ? JSON.parse(savedAttributes) : [
+      { id: 1, name: 'Color', type: 'select', required: true, status: 'active' },
+      { id: 2, name: 'Size', type: 'select', required: true, status: 'active' },
+      { id: 3, name: 'Material', type: 'select', required: false, status: 'active' },
+      { id: 4, name: 'Weight', type: 'text', required: false, status: 'active' },
+    ];
+  });
   const [editingAttribute, setEditingAttribute] = useState(null);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
 
+  // Helper to save to localStorage
+  const saveToStorage = (attrs) => {
+    localStorage.setItem('admin-attributes', JSON.stringify(attrs));
+  };
+
   const handleSave = (attrData) => {
+    let newAttributes;
     if (editingAttribute && editingAttribute.id) {
-      setAttributes(attributes.map((a) => (a.id === editingAttribute.id ? { ...attrData, id: editingAttribute.id } : a)));
+      newAttributes = attributes.map((a) => (a.id === editingAttribute.id ? { ...attrData, id: editingAttribute.id } : a));
       toast.success('Attribute updated');
     } else {
       const newId = attributes.length > 0 ? Math.max(...attributes.map(a => a.id)) + 1 : 1;
-      setAttributes([...attributes, { ...attrData, id: newId }]);
+      newAttributes = [...attributes, { ...attrData, id: newId }];
       toast.success('Attribute added');
     }
+    setAttributes(newAttributes);
+    saveToStorage(newAttributes);
     setEditingAttribute(null);
   };
 
   const handleDelete = () => {
-    setAttributes(attributes.filter((a) => a.id !== deleteModal.id));
+    const newAttributes = attributes.filter((a) => a.id !== deleteModal.id);
+    setAttributes(newAttributes);
+    saveToStorage(newAttributes);
     setDeleteModal({ isOpen: false, id: null });
     toast.success('Attribute deleted');
   };

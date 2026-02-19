@@ -40,6 +40,7 @@ const OrderDetail = () => {
     const statusOptions = [
         { value: 'pending', label: 'Pending', color: 'yellow' },
         { value: 'processing', label: 'Processing', color: 'blue' },
+        { value: 'ready_for_pickup', label: 'Ready for Pickup', color: 'indigo' },
         { value: 'shipped', label: 'Shipped', color: 'purple' },
         { value: 'delivered', label: 'Delivered', color: 'green' },
         { value: 'cancelled', label: 'Cancelled', color: 'red' }

@@ -75,6 +75,30 @@ const ReturnRequestDetail = () => {
 
     localStorage.setItem('admin-return-requests', JSON.stringify(updatedRequests));
     const updatedRequest = updatedRequests.find((r) => r.id === id);
+
+    // Update the corresponding order status in admin-orders and userOrders for connectivity
+    const orderStatusMap = {
+      'pending': 'return requested',
+      'approved': 'return approved',
+      'processing': 'return processing',
+      'completed': 'returned & refunded',
+      'rejected': 'delivered'
+    };
+
+    const updateOrders = (key) => {
+      const orders = JSON.parse(localStorage.getItem(key) || '[]');
+      const updatedOrders = orders.map(o => {
+        if (String(o.id) === String(updatedRequest.orderId)) {
+          return { ...o, status: orderStatusMap[newStatus] || o.status };
+        }
+        return o;
+      });
+      localStorage.setItem(key, JSON.stringify(updatedOrders));
+    };
+
+    updateOrders('admin-orders');
+    updateOrders('userOrders');
+
     setReturnRequest(updatedRequest);
     setStatus(updatedRequest.status);
     setIsEditing(false);
@@ -256,7 +280,7 @@ const ReturnRequestDetail = () => {
               Original Order
             </h2>
             <Link
-              to={`/admin/orders/${returnRequest.orderId}`}
+              to={`/admin/orders/detail/${returnRequest.orderId}`}
               className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold text-sm"
             >
               <span>View Order: {returnRequest.orderId}</span>
@@ -456,7 +480,7 @@ const ReturnRequestDetail = () => {
             <h2 className="text-sm font-bold text-gray-800 mb-3">Quick Actions</h2>
             <div className="space-y-1.5">
               <Link
-                to={`/admin/orders/${returnRequest.orderId}`}
+                to={`/admin/orders/detail/${returnRequest.orderId}`}
                 className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-xs font-semibold"
               >
                 <FiShoppingBag className="text-sm" />

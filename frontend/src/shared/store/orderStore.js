@@ -64,6 +64,16 @@ export const useOrderStore = create(
                 }));
             },
 
+            assignDeliveryBoy: (orderId, deliveryBoy) => {
+                set((state) => ({
+                    orders: state.orders.map((o) =>
+                        o.id === orderId
+                            ? { ...o, status: 'shipped', assignedDeliveryBoy: deliveryBoy }
+                            : o
+                    )
+                }));
+            },
+
             addOrder: (order) => {
                 set((state) => ({
                     orders: [order, ...state.orders]
@@ -81,6 +91,17 @@ export const useOrderStore = create(
                 return state.orders.filter(order =>
                     order.vendorItems?.some(vi => vi.vendorId === parseInt(vendorId))
                 );
+            },
+
+            getAvailableDeliveryOrders: () => {
+                const state = useOrderStore.getState();
+                // Delivery boys see orders that are ready for pickup
+                return state.orders.filter(order => order.status === 'ready_for_pickup');
+            },
+
+            getDeliveryBoyOrders: (deliveryBoyId) => {
+                const state = useOrderStore.getState();
+                return state.orders.filter(order => order.assignedDeliveryBoy?.id === deliveryBoyId);
             },
 
             getOrderById: (id) => {

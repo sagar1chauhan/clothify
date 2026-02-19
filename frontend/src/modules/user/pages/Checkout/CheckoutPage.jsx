@@ -54,7 +54,7 @@ const CheckoutPage = () => {
         }
 
         const addressData = addresses.find(a => a.id === selectedAddress);
-        navigate('/payment', { state: { address: addressData } });
+        navigate('/payment', { state: { selectedAddress: addressData } });
     };
 
     const totalPrice = getCartTotal();

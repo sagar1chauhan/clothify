@@ -1,12 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AccountLayout from '../../components/Profile/AccountLayout';
-import { ArrowLeft, Package, Clock, MapPin, Phone, CreditCard, ChevronRight, Printer } from 'lucide-react';
+import { ArrowLeft, Package, Clock, MapPin, Phone, CreditCard, ChevronRight, Printer, AlertTriangle, RefreshCcw, X } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const OrderDetailsPage = () => {
     const { orderId } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [order, setOrder] = useState(null);
+    const [showReturnModal, setShowReturnModal] = useState(false);
+    const [returnReason, setReturnReason] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const RETURN_REASONS = [
+        "Wrong size delivered",
+        "Item is defective or damaged",
+        "Item not as described",
+        "Changed my mind",
+        "Quality not as expected",
+        "Received wrong item"
+    ];
 
     useEffect(() => {
         // Check admin-orders first for latest status updates
@@ -149,6 +163,60 @@ const OrderDetailsPage = () => {
         invoiceWindow.document.close();
     };
 
+    const handleReturnSubmit = () => {
+        if (!returnReason) {
+            alert("Please select a reason for return");
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        // 1. Create Return Request
+        const returnId = `RET-${Math.floor(100000 + Math.random() * 900000)}`;
+        const newReturnRequest = {
+            id: returnId,
+            orderId: order.id,
+            customer: {
+                name: user?.name || order.address?.name || 'Guest User',
+                email: user?.email || 'guest@example.com'
+            },
+            requestDate: new Date().toISOString(),
+            items: order.items.map(item => ({
+                ...item,
+                price: item.discountedPrice || item.price || 0
+            })),
+            reason: returnReason,
+            refundAmount: order.total,
+            status: 'pending',
+            refundStatus: 'pending'
+        };
+
+        // 2. Save to admin return requests
+        const adminReturnRequests = JSON.parse(localStorage.getItem('admin-return-requests') || '[]');
+        localStorage.setItem('admin-return-requests', JSON.stringify([newReturnRequest, ...adminReturnRequests]));
+
+        // 3. Update order status to "Return Requested"
+        const updateOrderList = (key) => {
+            const orders = JSON.parse(localStorage.getItem(key) || '[]');
+            const updatedOrders = orders.map(o => {
+                if (String(o.id) === String(order.id)) {
+                    return { ...o, status: 'return requested', returnId: returnId };
+                }
+                return o;
+            });
+            localStorage.setItem(key, JSON.stringify(updatedOrders));
+        };
+
+        updateOrderList('userOrders');
+        updateOrderList('admin-orders');
+
+        // 4. Update local state
+        setOrder({ ...order, status: 'return requested', returnId: returnId });
+        setIsSubmitting(false);
+        setShowReturnModal(false);
+        alert("Return request submitted successfully. Our team will review it shortly.");
+    };
+
     if (!order) {
         return (
             <AccountLayout hideHeader={true}>
@@ -282,34 +350,163 @@ const OrderDetailsPage = () => {
                         <h3 className="text-[11px] md:text-sm font-black uppercase tracking-widest mb-6 flex items-center gap-2 text-gray-400">
                             <Clock size={16} /> Order Status
                         </h3>
-                        <div className="px-2">
-                            <div className="flex items-center">
-                                <div className="relative z-10 w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-green-500 rounded-full text-white shadow-lg shadow-green-200">
-                                    <Package size={14} />
+
+                        {(() => {
+                            const status = order.status?.toLowerCase() || 'pending';
+                            const isCancelled = status === 'cancelled' || status === 'canceled';
+
+                            let step = 1; // Default to Ordered (1)
+                            if (status === 'shipped') step = 2;
+                            if (status === 'delivered') step = 3;
+                            if (isCancelled) step = 0; // Special case
+
+                            return (
+                                <div className="px-2">
+                                    {isCancelled ? (
+                                        <div className="text-center py-4">
+                                            <p className="text-red-500 font-bold uppercase tracking-widest">Order Cancelled</p>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="flex items-center relative">
+                                                {/* Progress Line Background */}
+                                                <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-100 -translate-y-1/2 z-0 rounded-full"></div>
+
+                                                {/* Active Progress Line */}
+                                                <div
+                                                    className="absolute top-1/2 left-0 h-1 bg-green-500 -translate-y-1/2 z-0 rounded-full transition-all duration-500"
+                                                    style={{ width: step === 3 ? '100%' : step === 2 ? '50%' : '0%' }}
+                                                ></div>
+
+                                                {/* Step 1: Ordered */}
+                                                <div className={`relative z-10 w-8 h-8 flex items-center justify-center rounded-full transition-colors duration-300 ${step >= 1 ? 'bg-green-500 text-white shadow-lg shadow-green-200' : 'bg-gray-100 text-gray-400'}`}>
+                                                    <Package size={14} />
+                                                </div>
+
+                                                {/* Spacer */}
+                                                <div className="flex-1"></div>
+
+                                                {/* Step 2: Shipped */}
+                                                <div className={`relative z-10 w-8 h-8 flex items-center justify-center rounded-full transition-colors duration-300 ${step >= 2 ? 'bg-green-500 text-white shadow-lg shadow-green-200' : 'bg-gray-100 text-gray-400'}`}>
+                                                    <CreditCard size={14} />
+                                                </div>
+
+                                                {/* Spacer */}
+                                                <div className="flex-1"></div>
+
+                                                {/* Step 3: Delivered */}
+                                                <div className={`relative z-10 w-8 h-8 flex items-center justify-center rounded-full transition-colors duration-300 ${step >= 3 ? 'bg-green-500 text-white shadow-lg shadow-green-200' : 'bg-gray-100 text-gray-400'}`}>
+                                                    <Package size={14} />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2 overflow-hidden">
+                                                <span className={step >= 1 ? 'text-green-600' : ''}>Ordered</span>
+                                                <span className={step >= 2 ? 'text-green-600 text-center' : 'text-center'}>Shipped</span>
+                                                <span className={step >= 3 ? 'text-green-600 text-right' : 'text-right'}>Delivered</span>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
-                                <div className="flex-1 h-1 bg-gray-100 mx-1 md:mx-2 rounded-full relative">
-                                    <div className="absolute top-0 left-0 h-full bg-green-500 w-1/4 rounded-full"></div>
-                                </div>
-                                <div className="relative z-10 w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-400">
-                                    <Package size={14} />
-                                </div>
-                                <div className="flex-1 h-1 bg-gray-100 mx-1 md:mx-2 rounded-full"></div>
-                                <div className="relative z-10 w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-400">
-                                    <Package size={14} />
-                                </div>
-                            </div>
-                            <div className="flex justify-between text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2 overflow-hidden">
-                                <span className="text-green-600 truncate">Ordered</span>
-                                <span className="truncate">Shipped</span>
-                                <span className="truncate">Delivered</span>
-                            </div>
-                        </div>
+                            );
+                        })()}
+
                         <p className="text-[11px] md:text-xs font-bold text-gray-500 mt-6 text-center">
                             Expected Delivery by <span className="text-black">{new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString()}</span>
                         </p>
                     </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                        <button
+                            onClick={() => navigate(`/track-order/${orderId}`)}
+                            className="flex-1 py-3 bg-emerald-500 text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-emerald-600 transition-all active:scale-95 shadow-md shadow-emerald-200"
+                        >
+                            Track Order
+                        </button>
+
+                        {(order.status?.toLowerCase() === 'delivered') && (
+                            <button
+                                onClick={() => setShowReturnModal(true)}
+                                className="flex-1 py-3 bg-white text-black border-2 border-black rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-gray-50 transition-all active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                <RefreshCcw size={14} />
+                                Return Items
+                            </button>
+                        )}
+
+                        {order.status?.toLowerCase() === 'return requested' && (
+                            <div className="flex-1 py-3 bg-amber-50 text-amber-700 rounded-xl font-black text-[11px] uppercase tracking-widest border border-amber-200 flex items-center justify-center gap-2">
+                                <Clock size={14} />
+                                Return Under Review
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
+
+            {/* Return Request Modal */}
+            {showReturnModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+                        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-amber-100 text-amber-600 rounded-xl">
+                                    <AlertTriangle size={20} />
+                                </div>
+                                <h3 className="text-lg font-black uppercase tracking-tight">Return Request</h3>
+                            </div>
+                            <button
+                                onClick={() => setShowReturnModal(false)}
+                                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <p className="text-sm font-bold text-gray-500">
+                                Please select a reason for returning the items in order <span className="text-black">#{order.id}</span>.
+                            </p>
+
+                            <div className="space-y-2">
+                                {RETURN_REASONS.map((reason, idx) => (
+                                    <label
+                                        key={idx}
+                                        className={`flex items-center gap-3 p-3 rounded-2xl border-2 transition-all cursor-pointer ${returnReason === reason ? 'border-black bg-gray-50' : 'border-gray-100 hover:border-gray-200'}`}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="returnReason"
+                                            value={reason}
+                                            checked={returnReason === reason}
+                                            onChange={(e) => setReturnReason(e.target.value)}
+                                            className="w-4 h-4 accent-black"
+                                        />
+                                        <span className="text-xs font-bold text-gray-700">{reason}</span>
+                                    </label>
+                                ))}
+                            </div>
+
+                            <div className="pt-4 flex gap-3">
+                                <button
+                                    onClick={() => setShowReturnModal(false)}
+                                    className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-gray-200 transition-all font-bold"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleReturnSubmit}
+                                    disabled={!returnReason || isSubmitting}
+                                    className={`flex-1 py-3 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all shadow-lg ${!returnReason || isSubmitting ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800 shadow-gray-200'}`}
+                                >
+                                    {isSubmitting ? 'Submitting...' : 'Submit Request'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AccountLayout>
     );
 };

@@ -47,6 +47,18 @@ export default {
           'from': { opacity: '0', transform: 'translateY(30px)' },
           'to': { opacity: '1', transform: 'translateY(0)' },
         },
+        fadeIn: {
+          'from': { opacity: '0' },
+          'to': { opacity: '1' },
+        },
+        scaleIn: {
+          'from': { opacity: '0', transform: 'scale(0.95)' },
+          'to': { opacity: '1', transform: 'scale(1)' },
+        },
+        slideUp: {
+          'from': { transform: 'translateY(100%)' },
+          'to': { transform: 'translateY(0)' },
+        },
         ticker: {
           '0%': { transform: 'translateX(0)' },
           '100%': { transform: 'translateX(-50%)' },
@@ -54,6 +66,9 @@ export default {
       },
       animation: {
         fadeInUp: 'fadeInUp 0.8s ease-out forwards',
+        fadeIn: 'fadeIn 0.3s ease-out forwards',
+        scaleIn: 'scaleIn 0.3s ease-out forwards',
+        slideUp: 'slideUp 0.3s ease-out forwards',
         ticker: 'ticker 20s linear infinite',
       }
     },

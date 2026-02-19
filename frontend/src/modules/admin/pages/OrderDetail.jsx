@@ -19,41 +19,33 @@ import { motion } from 'framer-motion';
 import Badge from '../../../shared/components/Badge';
 import AnimatedSelect from '../components/AnimatedSelect';
 import { formatCurrency, formatDateTime } from '../utils/adminHelpers';
-import { mockOrders } from '../../../data/adminMockData';
 import { products, getProductById } from '../../../data/products';
 import toast from 'react-hot-toast';
+import { useOrderStore } from '../../../shared/store/orderStore';
 
 const OrderDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { getOrderById, updateOrderStatus, orders: allOrders } = useOrderStore(); // Use global store
   const [order, setOrder] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [status, setStatus] = useState('');
 
   useEffect(() => {
-    const savedOrders = localStorage.getItem('admin-orders');
-    const orders = savedOrders ? JSON.parse(savedOrders) : mockOrders;
-    const foundOrder = orders.find((o) => o.id === id);
-
-    if (foundOrder) {
-      setOrder(foundOrder);
-      setStatus(foundOrder.status);
-    } else {
-      toast.error('Order not found');
-      navigate('/admin/orders');
+    if (id) {
+      const foundOrder = getOrderById(id);
+      if (foundOrder) {
+        setOrder(foundOrder);
+        setStatus(foundOrder.status);
+      } else {
+        toast.error('Order not found');
+        navigate('/admin/orders');
+      }
     }
-  }, [id, navigate]);
+  }, [id, allOrders, getOrderById, navigate]);
 
   const handleStatusUpdate = () => {
-    const savedOrders = localStorage.getItem('admin-orders');
-    const orders = savedOrders ? JSON.parse(savedOrders) : mockOrders;
-
-    const updatedOrders = orders.map((o) =>
-      o.id === id ? { ...o, status } : o
-    );
-
-    localStorage.setItem('admin-orders', JSON.stringify(updatedOrders));
-    setOrder({ ...order, status });
+    updateOrderStatus(id, status);
     setIsEditing(false);
     toast.success('Order status updated successfully');
   };

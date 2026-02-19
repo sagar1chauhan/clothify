@@ -186,7 +186,7 @@ const CustomerDetailPage = () => {
       sortable: false,
       render: (_, row) => (
         <button
-          onClick={() => navigate(`/admin/orders/${row.id}`)}
+          onClick={() => navigate(`/admin/orders/detail/${row.id}`)}
           className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
         >
           View
@@ -207,12 +207,9 @@ const CustomerDetailPage = () => {
       label: 'Order ID',
       sortable: true,
       render: (value) => (
-        <button
-          onClick={() => navigate(`/admin/orders/${value}`)}
-          className="text-primary-600 hover:underline font-semibold"
-        >
+        <span className="text-blue-600 hover:text-blue-800 cursor-pointer font-medium" onClick={() => navigate(`/admin/orders/detail/${value}`)}>
           {value}
-        </button>
+        </span>
       ),
     },
     {
@@ -506,7 +503,7 @@ const CustomerDetailPage = () => {
                       <div
                         key={order.id}
                         className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/admin/orders/${order.id}`)}
+                        onClick={() => navigate(`/admin/orders/detail/${order.id}`)}
                       >
                         <div>
                           <p className="font-semibold text-gray-800">{order.id}</p>

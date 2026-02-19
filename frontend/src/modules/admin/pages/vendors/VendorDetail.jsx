@@ -152,7 +152,7 @@ const VendorDetail = () => {
       sortable: false,
       render: (_, row) => (
         <button
-          onClick={() => navigate(`/admin/orders/${row.id}`)}
+          onClick={() => navigate(`/admin/orders/detail/${row.id}`)}
           className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
           View
         </button>
@@ -271,8 +271,8 @@ const VendorDetail = () => {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-6 py-3 font-semibold text-sm transition-colors ${activeTab === tab
-                  ? "text-primary-600 border-b-2 border-primary-600"
-                  : "text-gray-600 hover:text-gray-800"
+                ? "text-primary-600 border-b-2 border-primary-600"
+                : "text-gray-600 hover:text-gray-800"
                 }`}>
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>

@@ -172,10 +172,10 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [name]: type === "checkbox" ? checked : value,
-    });
+    }));
   };
 
   const handleImageUpload = (e) => {
@@ -193,10 +193,10 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData({
-          ...formData,
+        setFormData((prev) => ({
+          ...prev,
           image: reader.result,
-        });
+        }));
       };
       reader.onerror = () => {
         toast.error("Error reading image file");
@@ -236,10 +236,10 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
 
     Promise.all(readers)
       .then((results) => {
-        setFormData({
-          ...formData,
-          images: [...formData.images, ...results],
-        });
+        setFormData((prev) => ({
+          ...prev,
+          images: [...prev.images, ...results],
+        }));
         toast.success(`${validFiles.length} image(s) added to gallery`);
       })
       .catch(() => {
@@ -248,10 +248,10 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
   };
 
   const removeGalleryImage = (index) => {
-    setFormData({
-      ...formData,
-      images: formData.images.filter((_, i) => i !== index),
-    });
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
   };
 
   const handleSubmit = (e) => {
@@ -271,36 +271,49 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
     const finalCategoryId = formData.subcategoryId
       ? parseInt(formData.subcategoryId)
       : formData.categoryId
-      ? parseInt(formData.categoryId)
-      : null;
+        ? parseInt(formData.categoryId)
+        : null;
+
+    // Helper to calculate discount
+    const calculateDiscount = (original, selling) => {
+      if (!original || !selling || original <= selling) return null;
+      const diff = original - selling;
+      const percentage = Math.round((diff / original) * 100);
+      return `${percentage}% Off`;
+    };
+
+    const price = parseFloat(formData.price);
+    const originalPrice = formData.originalPrice ? parseFloat(formData.originalPrice) : null;
+    const discount = calculateDiscount(originalPrice, price);
 
     if (isEdit) {
       const updatedProducts = products.map((p) =>
         p.id === parseInt(productId)
           ? {
-              ...p,
-              ...formData,
-              id: parseInt(productId),
-              price: parseFloat(formData.price),
-              originalPrice: formData.originalPrice
-                ? parseFloat(formData.originalPrice)
-                : null,
-              stockQuantity: parseInt(formData.stockQuantity),
-              totalAllowedQuantity: formData.totalAllowedQuantity
-                ? parseInt(formData.totalAllowedQuantity)
-                : null,
-              minimumOrderQuantity: formData.minimumOrderQuantity
-                ? parseInt(formData.minimumOrderQuantity)
-                : null,
-              warrantyPeriod: formData.warrantyPeriod || null,
-              guaranteePeriod: formData.guaranteePeriod || null,
-              hsnCode: formData.hsnCode || null,
-              categoryId: finalCategoryId,
-              subcategoryId: formData.subcategoryId
-                ? parseInt(formData.subcategoryId)
-                : null,
-              brandId: formData.brandId ? parseInt(formData.brandId) : null,
-            }
+            ...p,
+            ...formData,
+            id: parseInt(productId),
+            price: price,
+            originalPrice: originalPrice,
+            // Add fields expected by user app
+            discountedPrice: price,
+            discount: discount,
+            stockQuantity: parseInt(formData.stockQuantity),
+            totalAllowedQuantity: formData.totalAllowedQuantity
+              ? parseInt(formData.totalAllowedQuantity)
+              : null,
+            minimumOrderQuantity: formData.minimumOrderQuantity
+              ? parseInt(formData.minimumOrderQuantity)
+              : null,
+            warrantyPeriod: formData.warrantyPeriod || null,
+            guaranteePeriod: formData.guaranteePeriod || null,
+            hsnCode: formData.hsnCode || null,
+            categoryId: finalCategoryId,
+            subcategoryId: formData.subcategoryId
+              ? parseInt(formData.subcategoryId)
+              : null,
+            brandId: formData.brandId ? parseInt(formData.brandId) : null,
+          }
           : p
       );
       localStorage.setItem("admin-products", JSON.stringify(updatedProducts));
@@ -310,10 +323,11 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
       const newProduct = {
         id: newId,
         ...formData,
-        price: parseFloat(formData.price),
-        originalPrice: formData.originalPrice
-          ? parseFloat(formData.originalPrice)
-          : null,
+        price: price,
+        originalPrice: originalPrice,
+        // Add fields expected by user app
+        discountedPrice: price,
+        discount: discount,
         stockQuantity: parseInt(formData.stockQuantity),
         categoryId: finalCategoryId,
         subcategoryId: formData.subcategoryId
@@ -355,9 +369,8 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className={`fixed inset-0 z-[10000] flex ${
-              isAppRoute ? "items-start pt-[10px]" : "items-end"
-            } sm:items-center justify-center p-4 pointer-events-none`}>
+            className={`fixed inset-0 z-[10000] flex ${isAppRoute ? "items-start pt-[10px]" : "items-end"
+              } sm:items-center justify-center p-4 pointer-events-none`}>
             <motion.div
               variants={{
                 hidden: {
@@ -391,9 +404,8 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
               animate="visible"
               exit="exit"
               onClick={(e) => e.stopPropagation()}
-              className={`bg-white ${
-                isAppRoute ? "rounded-b-3xl" : "rounded-t-3xl"
-              } sm:rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col pointer-events-auto`}
+              className={`bg-white ${isAppRoute ? "rounded-b-3xl" : "rounded-t-3xl"
+                } sm:rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col pointer-events-auto`}
               style={{ willChange: "transform" }}>
               {/* Header */}
               <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">

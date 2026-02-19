@@ -4,9 +4,12 @@ import Header from './modules/user/components/Header/Header';
 import Footer from './modules/user/components/Footer/Footer';
 import BottomNav from './modules/user/components/Navigation/BottomNav';
 import AppRoutes from './routes/AppRoutes';
+import LocationModal from './modules/user/components/Header/LocationModal';
+import { useLocation as useUserLocation } from './modules/user/context/LocationContext';
 
 function App() {
   const location = useLocation();
+  const { activeAddress } = useUserLocation();
   const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
 
   React.useEffect(() => {
@@ -30,17 +33,32 @@ function App() {
     (isAccountDetail && isMobile) ||
     location.pathname === '/products' ||
     location.pathname === '/cart' ||
-    location.pathname === '/payment';
+    location.pathname === '/payment' ||
+    location.pathname.startsWith('/order-success') ||
+    location.pathname.startsWith('/track-order');
 
   const hideHeader = hideNav || isProductDetail || location.pathname === '/wishlist';
   const hideFooter = hideNav || isProductDetail || location.pathname === '/wishlist';
 
+  // Check if we need to force location selection
+  // Exempt authentication pages and module pages
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password'; // Basic auth pages
+  const showMandatoryLocation = !activeAddress && !isModulePath && !isAuthPage;
+
   return (
     <div className={`min-h-screen flex flex-col font-main ${isModulePath ? 'bg-gray-50' : 'bg-[#fafafa]'}`}>
       {!hideHeader && <Header />}
+
+      {/* Mandatory Location Modal */}
+      <LocationModal
+        isOpen={showMandatoryLocation}
+        onClose={() => { }}
+        isMandatory={true}
+      />
+
       <main
         key={isModulePath ? 'module-root' : location.pathname}
-        className={`flex-1 ${(!hideNav || (isAccountDetail && !isMobile)) ? 'pb-[60px] md:pb-0' : ''} ${isModulePath ? '' : 'animate-fadeInUp'}`}
+        className={`flex-1 ${(!hideNav || (isAccountDetail && !isMobile)) ? 'pb-[60px] md:pb-0' : ''}`}
       >
         <AppRoutes />
       </main>

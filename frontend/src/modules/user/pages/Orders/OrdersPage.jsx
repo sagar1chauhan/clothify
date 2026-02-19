@@ -84,8 +84,11 @@ const OrdersPage = () => {
                                         <Package size={14} />
                                         <span className="truncate">Expected Delivery by {new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString()}</span>
                                     </div>
-                                    <button className="p-2 hover:bg-gray-50 rounded-full transition-colors shrink-0">
-                                        <ChevronRight size={16} />
+                                    <button
+                                        onClick={() => navigate(`/track-order/${order.id}`)}
+                                        className="px-4 py-2 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-100 transition-colors shrink-0"
+                                    >
+                                        Track
                                     </button>
                                 </div>
                             </div>

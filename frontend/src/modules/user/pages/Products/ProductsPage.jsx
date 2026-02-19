@@ -5,12 +5,15 @@ import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 import { Filter, X, ChevronDown, ChevronUp, Star, Eye, ShoppingCart, Search, ArrowLeft, Heart, Share2, Check, MapPin } from 'lucide-react';
 import LocationModal from '../../components/Header/LocationModal';
+import { useAuth } from '../../context/AuthContext';
+import LoginModal from '../../components/Modals/LoginModal';
 import { useLocation as useLocationContext } from '../../context/LocationContext';
 
 const ProductsPage = () => {
     const { toggleWishlist, isInWishlist, wishlistItems } = useWishlist();
     const { addToCart, getCartCount } = useCart();
     const { activeAddress } = useLocationContext();
+    const { user } = useAuth();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -18,6 +21,7 @@ const ProductsPage = () => {
     const [isGenderOpen, setIsGenderOpen] = useState(false);
     const [isHeaderSearchOpen, setIsHeaderSearchOpen] = useState(false);
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
     // Active Filters State
     const [activeFilterTab, setActiveFilterTab] = useState('Brand');
@@ -61,14 +65,56 @@ const ProductsPage = () => {
         }
     }, [searchParams, brandFromUrl]);
 
+    // Dynamic Filter State
+    const [filterOptions, setFilterOptions] = useState({
+        sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+        fabrics: [],
+        patterns: [],
+        fits: []
+    });
+
+    const [allProducts, setAllProducts] = useState([...products]);
+
+    // Load admin products and attributes
+    useEffect(() => {
+        // Load products
+        const savedProducts = localStorage.getItem('admin-products');
+        if (savedProducts) {
+            const parsedProducts = JSON.parse(savedProducts);
+            // Merge unique products
+            const merged = [...parsedProducts, ...products];
+            // Simple deduplication - prioritize admin if duplicate ID (though IDs should ideally be distinct)
+            const unique = Array.from(new Map(merged.map(item => [item.id, item])).values());
+            setAllProducts(unique);
+        }
+
+        // Load attribute sets from admin side
+        const savedSets = localStorage.getItem('admin-attribute-sets');
+        if (savedSets) {
+            const parsedSets = JSON.parse(savedSets);
+            const newOptions = { ...filterOptions };
+
+            parsedSets.forEach(set => {
+                const name = set.name.toLowerCase();
+                if (name.includes('size')) newOptions.sizes = set.attributes;
+                if (name.includes('material') || name.includes('fabric')) newOptions.fabrics = set.attributes;
+                if (name.includes('pattern')) newOptions.patterns = set.attributes;
+                if (name.includes('fit')) newOptions.fits = set.attributes;
+            });
+
+            setFilterOptions(newOptions);
+        }
+    }, []);
+
     // Mock unique values for filters
     const filterCategories = [
         'Brand', 'Sub Category', 'Product Type', 'Trend', 'Trend Type', 'Size', 'Fit', 'Fabric', 'Pattern', 'Closure Type', 'Neck Type', 'Rise Type', 'Length'
     ];
 
-    const brands = [...new Set(products.map(p => p.brand))].sort();
-    const subCategories = [...new Set(products.map(p => p.subCategory))];
-    const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+    const brands = [...new Set(allProducts.map(p => p.brand))].filter(Boolean).sort();
+    const subCategories = [...new Set(allProducts.map(p => p.subCategory))].filter(Boolean);
+    // Use dynamic sizes
+    const sizes = filterOptions.sizes;
 
     const toggleSection = (section) => {
         setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -76,34 +122,34 @@ const ProductsPage = () => {
 
     // Derived filtered products
     const filteredProducts = React.useMemo(() => {
-        let result = [...products];
+        let result = [...allProducts];
 
         // 1. Gender Filter (Manual override)
         if (selectedGender !== 'All') {
-            result = result.filter(p => p.division.toLowerCase() === selectedGender.toLowerCase());
+            result = result.filter(p => p.division?.toLowerCase() === selectedGender.toLowerCase());
         }
 
         // 2. URL Params Filter (Only if no manual override)
         if (selectedGender === 'All') {
             if (division) {
-                result = result.filter(p => p.division.toLowerCase() === division.toLowerCase());
+                result = result.filter(p => p.division?.toLowerCase() === division.toLowerCase());
             }
             if (category) {
-                result = result.filter(p => p.category.toLowerCase() === category.toLowerCase() || p.division.toLowerCase() === category.toLowerCase());
+                result = result.filter(p => p.category?.toLowerCase() === category.toLowerCase() || p.division?.toLowerCase() === category.toLowerCase());
             }
         }
 
         if (subCategoryFromUrl) {
-            result = result.filter(p => p.subCategory.toLowerCase() === subCategoryFromUrl.toLowerCase());
+            result = result.filter(p => p.subCategory?.toLowerCase() === subCategoryFromUrl.toLowerCase());
         }
 
         // 4. Header Search Filter
         if (headerSearchValue) {
             const query = headerSearchValue.toLowerCase();
             result = result.filter(p =>
-                p.name.toLowerCase().includes(query) ||
-                p.brand.toLowerCase().includes(query) ||
-                p.subCategory.toLowerCase().includes(query)
+                (p.name || '').toLowerCase().includes(query) ||
+                (p.brand || '').toLowerCase().includes(query) ||
+                (p.subCategory || '').toLowerCase().includes(query)
             );
         }
 
@@ -132,7 +178,7 @@ const ProductsPage = () => {
         }
 
         return result;
-    }, [headerSearchValue, selectedGender, selectedSort, selectedBrands, division, category]);
+    }, [headerSearchValue, selectedGender, selectedSort, selectedBrands, division, category, subCategoryFromUrl, allProducts]);
 
     const handleSelectBrand = (brand) => {
         setSelectedBrands(prev =>
@@ -386,6 +432,10 @@ const ProductsPage = () => {
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
+                                                    if (!user) {
+                                                        setIsLoginModalOpen(true);
+                                                        return;
+                                                    }
                                                     addToCart({ ...product, selectedSize: product.size ? product.size[0] : 'M' });
                                                 }}
                                                 className="w-10 h-10 bg-[#ffcc00] text-black rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all"
@@ -408,11 +458,17 @@ const ProductsPage = () => {
                                         <div className="text-[12px] font-black text-gray-400 uppercase tracking-tight mb-0.5">{product.brand}</div>
                                         <h3 className="text-[14px] font-bold text-gray-800 leading-tight line-clamp-1 mb-2 group-hover:text-black transition-colors">{product.name}</h3>
                                         <div className="flex items-center gap-3">
-                                            <span className="text-[15px] font-black text-black">₹{product.discountedPrice}</span>
-                                            <span className="text-[12px] font-bold text-gray-400 line-through">₹{product.originalPrice}</span>
-                                            <span className="text-[11px] font-black text-[#00a278] bg-[#00a278]/5 px-2 py-0.5 rounded-full">
-                                                {product.discount}
+                                            <span className="text-[15px] font-black text-black">
+                                                ₹{product.discountedPrice !== undefined ? product.discountedPrice : product.price}
                                             </span>
+                                            {(product.originalPrice || product.price) && product.originalPrice && (
+                                                <span className="text-[12px] font-bold text-gray-400 line-through">₹{product.originalPrice}</span>
+                                            )}
+                                            {(product.discount || (product.originalPrice && (product.discountedPrice || product.price) && product.originalPrice > (product.discountedPrice || product.price))) && (
+                                                <span className="text-[11px] font-black text-[#00a278] bg-[#00a278]/5 px-2 py-0.5 rounded-full">
+                                                    {product.discount || `${Math.round(((product.originalPrice - (product.discountedPrice || product.price)) / product.originalPrice) * 100)}% OFF`}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -576,7 +632,7 @@ const ProductsPage = () => {
                     </div>
                 )
             }
-            <div className="md:hidden sticky bottom-0 left-0 w-full bg-white border-t border-gray-100 z-50 flex h-16 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
+            <div className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 z-[90] flex h-16 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
                 <button
                     onClick={() => setIsGenderOpen(true)}
                     className="flex-1 flex items-center justify-center gap-2 text-[13px] font-black uppercase tracking-wider border-r border-gray-100"
@@ -596,6 +652,11 @@ const ProductsPage = () => {
                     Filter
                 </button>
             </div>
+
+            <LoginModal
+                isOpen={isLoginModalOpen}
+                onClose={() => setIsLoginModalOpen(false)}
+            />
         </div>
     );
 };

@@ -17,7 +17,7 @@ import { formatCurrency } from '../utils/adminHelpers';
 const Dashboard = () => {
   const navigate = useNavigate();
   const [period, setPeriod] = useState('month');
-  
+
   const revenueData = useMemo(() => generateRevenueData(30), []);
   const analyticsSummary = useMemo(() => getAnalyticsSummary(), []);
 
@@ -81,7 +81,7 @@ const Dashboard = () => {
         <TopProducts products={topProducts} />
         <RecentOrders
           orders={mockOrders}
-          onViewOrder={(order) => navigate(`/admin/orders/${order.id}`)}
+          onViewOrder={(order) => navigate(`/admin/orders/detail/${order.id}`)}
         />
       </div>
     </motion.div>

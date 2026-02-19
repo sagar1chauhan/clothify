@@ -15,48 +15,34 @@ import {
 import PageTransition from '../../../shared/components/PageTransition';
 import { formatPrice } from '../../../shared/utils/helpers';
 import toast from 'react-hot-toast';
+import { useOrderStore } from '../../../shared/store/orderStore';
+import { useDeliveryAuthStore } from '../store/deliveryStore';
 
 const DeliveryOrderDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { getOrderById, updateOrderStatus, assignDeliveryBoy, orders: allOrders } = useOrderStore();
+  const { deliveryBoy } = useDeliveryAuthStore();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mock order data - replace with actual API call
-    setTimeout(() => {
-      setOrder({
-        id: id,
-        customer: 'John Doe',
-        phone: '+1234567890',
-        email: 'john.doe@example.com',
-        address: '123 Main St, City, State 12345',
-        latitude: 40.7128, // New York City coordinates (example)
-        longitude: -74.0060,
-        amount: 45.99,
-        deliveryFee: 5.00,
-        total: 50.99,
-        status: 'pending',
-        distance: '2.5 km',
-        estimatedTime: '15 min',
-        items: [
-          { name: 'Product 1', quantity: 2, price: 15.99 },
-          { name: 'Product 2', quantity: 1, price: 14.00 },
-        ],
-        createdAt: '2024-01-15T10:30:00',
-        instructions: 'Please ring the doorbell twice',
-      });
+    if (id) {
+      const foundOrder = getOrderById(id);
+      if (foundOrder) {
+        setOrder(foundOrder);
+      }
       setLoading(false);
-    }, 500);
-  }, [id]);
+    }
+  }, [id, allOrders, getOrderById]);
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'pending':
+      case 'ready_for_pickup':
         return 'bg-yellow-100 text-yellow-800';
-      case 'in-transit':
+      case 'shipped':
         return 'bg-blue-100 text-blue-800';
-      case 'completed':
+      case 'delivered':
         return 'bg-green-100 text-green-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -64,22 +50,24 @@ const DeliveryOrderDetail = () => {
   };
 
   const handleAcceptOrder = () => {
-    setOrder({ ...order, status: 'in-transit' });
+    if (!deliveryBoy) return;
+    assignDeliveryBoy(id, deliveryBoy);
     toast.success('Order accepted! Map location is now available.');
   };
 
   const handleCompleteOrder = () => {
-    setOrder({ ...order, status: 'completed' });
+    updateOrderStatus(id, 'delivered');
+    toast.success('Order delivered!');
   };
 
   const openInGoogleMaps = () => {
     const { latitude, longitude } = order;
-    
+
     // Detect platform
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
     const isAndroid = /android/i.test(userAgent);
-    
+
     if (isAndroid) {
       // Android: Use intent URL (opens Google Maps app if installed, otherwise web)
       const intentUrl = `intent://maps.google.com/maps?daddr=${latitude},${longitude}&directionsmode=driving#Intent;scheme=https;package=com.google.android.apps.maps;end`;
@@ -89,7 +77,7 @@ const DeliveryOrderDetail = () => {
       const appUrl = `comgooglemaps://?daddr=${latitude},${longitude}&directionsmode=driving`;
       // Universal link as fallback (opens app if installed, otherwise web)
       const universalUrl = `https://maps.google.com/maps?daddr=${latitude},${longitude}&directionsmode=driving`;
-      
+
       // Try app URL
       const link = document.createElement('a');
       link.href = appUrl;
@@ -97,7 +85,7 @@ const DeliveryOrderDetail = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       // Fallback to universal link after brief delay
       setTimeout(() => {
         window.location.href = universalUrl;
@@ -146,7 +134,7 @@ const DeliveryOrderDetail = () => {
           <div className="flex-1">
             <h1 className="text-xl font-bold text-gray-800">{order.id}</h1>
             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
-              {order.status.replace('-', ' ')}
+              {order.status?.replace('_', ' ')?.replace('-', ' ')}
             </span>
           </div>
         </div>
@@ -162,14 +150,14 @@ const DeliveryOrderDetail = () => {
             Customer Information
           </h2>
           <div className="space-y-2">
-            <p className="text-gray-800 font-semibold">{order.customer}</p>
+            <p className="text-gray-800 font-semibold">{order.customer?.name || 'Guest'}</p>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <FiPhone />
-              <a href={`tel:${order.phone}`} className="hover:text-primary-600">
-                {order.phone}
+              <a href={`tel:${order.customer?.phone}`} className="hover:text-primary-600">
+                {order.customer?.phone || 'No phone'}
               </a>
             </div>
-            <p className="text-sm text-gray-600">{order.email}</p>
+            <p className="text-sm text-gray-600">{order.customer?.email || 'No email'}</p>
           </div>
         </motion.div>
 
@@ -184,15 +172,19 @@ const DeliveryOrderDetail = () => {
             <FiMapPin />
             Delivery Address
           </h2>
-          <p className="text-gray-700 mb-3">{order.address}</p>
+          <p className="text-gray-700 mb-3">
+            {typeof order.address === 'string'
+              ? order.address
+              : `${order.address?.address || ''}, ${order.address?.city || ''} ${order.address?.pincode || ''}`}
+          </p>
           <div className="flex items-center gap-4 text-sm text-gray-600">
             <div className="flex items-center gap-1">
               <FiNavigation />
-              <span>{order.distance}</span>
+              <span>{order.distance || '2-5 km'}</span>
             </div>
             <div className="flex items-center gap-1">
               <FiClock />
-              <span>{order.estimatedTime}</span>
+              <span>{order.estimatedTime || '15-30 min'}</span>
             </div>
           </div>
           {order.instructions && (
@@ -206,7 +198,7 @@ const DeliveryOrderDetail = () => {
         </motion.div>
 
         {/* Map - Show when order is accepted */}
-        {(order.status === 'in-transit' || order.status === 'completed') && order.latitude && order.longitude && (
+        {(order.status === 'shipped' || order.status === 'delivered') && (order.latitude || order.address?.latitude) && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -225,7 +217,7 @@ const DeliveryOrderDetail = () => {
                 loading="lazy"
                 allowFullScreen
                 referrerPolicy="no-referrer-when-downgrade"
-                src={`https://www.openstreetmap.org/export/embed.html?bbox=${order.longitude - 0.01},${order.latitude - 0.01},${order.longitude + 0.01},${order.latitude + 0.01}&layer=mapnik&marker=${order.latitude},${order.longitude}`}
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${(order.longitude || -74.006) - 0.01},${(order.latitude || 40.7128) - 0.01},${(order.longitude || -74.006) + 0.01},${(order.latitude || 40.7128) + 0.01}&layer=mapnik&marker=${order.latitude || 40.7128},${order.longitude || -74.006}`}
                 title="Delivery Location Map"
               />
             </div>
@@ -253,13 +245,13 @@ const DeliveryOrderDetail = () => {
             Order Items
           </h2>
           <div className="space-y-3">
-            {order.items.map((item, index) => (
+            {order.items?.map((item, index) => (
               <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
                 <div>
                   <p className="font-semibold text-gray-800">{item.name}</p>
                   <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                 </div>
-                <p className="font-semibold text-gray-800">{formatPrice(item.price)}</p>
+                <p className="font-semibold text-gray-800">{formatPrice(item.discountedPrice || item.price)}</p>
               </div>
             ))}
           </div>
@@ -279,15 +271,15 @@ const DeliveryOrderDetail = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between text-gray-700">
               <span>Subtotal</span>
-              <span>{formatPrice(order.amount)}</span>
+              <span>{formatPrice(order.total || order.amount)}</span>
             </div>
             <div className="flex items-center justify-between text-gray-700">
               <span>Delivery Fee</span>
-              <span>{formatPrice(order.deliveryFee)}</span>
+              <span>{formatPrice(order.deliveryFee || 0)}</span>
             </div>
             <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
               <span className="font-bold text-gray-800">Total</span>
-              <span className="font-bold text-primary-600 text-lg">{formatPrice(order.total)}</span>
+              <span className="font-bold text-primary-600 text-lg">{formatPrice(order.total || order.amount)}</span>
             </div>
           </div>
         </motion.div>
@@ -299,7 +291,7 @@ const DeliveryOrderDetail = () => {
           transition={{ delay: 0.4 }}
           className="space-y-3 pt-4"
         >
-          {order.status === 'pending' && (
+          {order.status === 'ready_for_pickup' && (
             <button
               onClick={handleAcceptOrder}
               className="w-full gradient-green text-white py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2"
@@ -308,7 +300,7 @@ const DeliveryOrderDetail = () => {
               Accept Order
             </button>
           )}
-          {order.status === 'in-transit' && (
+          {order.status === 'shipped' && (
             <button
               onClick={handleCompleteOrder}
               className="w-full gradient-green text-white py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2"
@@ -318,7 +310,7 @@ const DeliveryOrderDetail = () => {
             </button>
           )}
           <button
-            onClick={() => window.open(`tel:${order.phone}`, '_self')}
+            onClick={() => window.open(`tel:${order.customer?.phone}`, '_self')}
             className="w-full bg-gray-100 text-gray-700 py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 hover:bg-gray-200"
           >
             <FiPhone />

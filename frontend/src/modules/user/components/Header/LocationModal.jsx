@@ -83,7 +83,7 @@ const fetchAddress = async (lat, lng, setAddress) => {
     }
 };
 
-const LocationModal = ({ isOpen, onClose }) => {
+const LocationModal = ({ isOpen, onClose, isMandatory = false }) => {
     const navigate = useNavigate();
     const { addresses, activeAddress, updateActiveAddress, refreshAddresses } = useLocationContext();
     const { user } = useAuth();
@@ -114,7 +114,7 @@ const LocationModal = ({ isOpen, onClose }) => {
     if (!isOpen) return null;
 
     const handleAddNew = () => {
-        onClose();
+        if (!isMandatory) onClose();
         navigate('/addresses');
     };
 
@@ -202,9 +202,11 @@ const LocationModal = ({ isOpen, onClose }) => {
                             {view === 'map' ? 'Pin Location' : 'Select Delivery Location'}
                         </h2>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                        <X size={20} className="text-gray-500" />
-                    </button>
+                    {!isMandatory && (
+                        <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                            <X size={20} className="text-gray-500" />
+                        </button>
+                    )}
                 </div>
 
                 {/* Content */}

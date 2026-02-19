@@ -11,6 +11,8 @@ import AccountPage from '../modules/user/pages/Profile/AccountPage';
 import LegalPage from '../modules/user/pages/Profile/LegalPage';
 import ProfilePage from '../modules/user/pages/Profile/ProfilePage';
 import OrderDetailsPage from '../modules/user/pages/Orders/OrderDetailsPage';
+import OrderSuccessPage from '../modules/user/pages/Orders/OrderSuccessPage';
+import TrackOrderPage from '../modules/user/pages/Orders/TrackOrderPage';
 import OrdersPage from '../modules/user/pages/Orders/OrdersPage';
 import OffersPage from '../modules/user/pages/Offers/OffersPage';
 import AddressesPage from '../modules/user/pages/Addresses/AddressesPage';
@@ -60,6 +62,8 @@ const AppRoutes = () => {
             <Route path="/profile" element={<RouteWrapper><ProfilePage /></RouteWrapper>} />
             <Route path="/orders" element={<RouteWrapper><OrdersPage /></RouteWrapper>} />
             <Route path="/orders/:orderId" element={<RouteWrapper><OrderDetailsPage /></RouteWrapper>} />
+            <Route path="/order-success/:orderId" element={<RouteWrapper><OrderSuccessPage /></RouteWrapper>} />
+            <Route path="/track-order/:orderId" element={<RouteWrapper><TrackOrderPage /></RouteWrapper>} />
             <Route path="/addresses" element={<RouteWrapper><AddressesPage /></RouteWrapper>} />
             <Route path="/wishlist" element={<RouteWrapper><WishlistPage /></RouteWrapper>} />
             <Route path="/offers" element={<RouteWrapper><OffersPage /></RouteWrapper>} />

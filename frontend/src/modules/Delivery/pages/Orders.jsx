@@ -4,79 +4,53 @@ import { FiPackage, FiMapPin, FiClock, FiCheckCircle, FiXCircle, FiNavigation } 
 import { useNavigate } from 'react-router-dom';
 import PageTransition from '../../../shared/components/PageTransition';
 import { formatPrice } from '../../../shared/utils/helpers';
+import { useOrderStore } from '../../../shared/store/orderStore';
+import { useDeliveryAuthStore } from '../store/deliveryStore';
+import toast from 'react-hot-toast';
 
 const DeliveryOrders = () => {
   const navigate = useNavigate();
-  const [filter, setFilter] = useState('all'); // all, pending, in-transit, completed
+  const { orders: allOrders, getAvailableDeliveryOrders, getDeliveryBoyOrders, assignDeliveryBoy, updateOrderStatus } = useOrderStore();
+  const { deliveryBoy } = useDeliveryAuthStore();
+  const [filter, setFilter] = useState('all'); // all, available, in-transit, completed
   const [orders, setOrders] = useState([]);
 
-  // Mock orders data - replace with actual API call
   useEffect(() => {
-    const mockOrders = [
-      {
-        id: 'ORD-001',
-        customer: 'John Doe',
-        phone: '+1234567890',
-        address: '123 Main St, City, State 12345',
-        amount: 45.99,
-        status: 'pending',
-        distance: '2.5 km',
-        estimatedTime: '15 min',
-        items: 3,
-        createdAt: '2024-01-15T10:30:00',
-      },
-      {
-        id: 'ORD-002',
-        customer: 'Jane Smith',
-        phone: '+1234567891',
-        address: '456 Oak Ave, City, State 12345',
-        amount: 89.50,
-        status: 'in-transit',
-        distance: '5.1 km',
-        estimatedTime: '25 min',
-        items: 5,
-        createdAt: '2024-01-15T09:15:00',
-      },
-      {
-        id: 'ORD-003',
-        customer: 'Bob Johnson',
-        phone: '+1234567892',
-        address: '789 Pine Rd, City, State 12345',
-        amount: 32.00,
-        status: 'pending',
-        distance: '1.8 km',
-        estimatedTime: '10 min',
-        items: 2,
-        createdAt: '2024-01-15T11:00:00',
-      },
-      {
-        id: 'ORD-004',
-        customer: 'Alice Brown',
-        phone: '+1234567893',
-        address: '321 Elm St, City, State 12345',
-        amount: 67.25,
-        status: 'completed',
-        distance: '3.2 km',
-        estimatedTime: '20 min',
-        items: 4,
-        createdAt: '2024-01-15T08:00:00',
-      },
-    ];
-    setOrders(mockOrders);
-  }, []);
+    if (!deliveryBoy) return;
 
-  const filteredOrders = orders.filter((order) => {
-    if (filter === 'all') return true;
-    return order.status === filter;
-  });
+    let displayOrders = [];
+    if (filter === 'all' || filter === 'available') {
+      displayOrders = [...displayOrders, ...getAvailableDeliveryOrders()];
+    }
+
+    // Also include orders assigned to this delivery boy
+    const myOrders = getDeliveryBoyOrders(deliveryBoy.id);
+    displayOrders = [...displayOrders, ...myOrders];
+
+    // Filter by status if not 'all'
+    if (filter === 'pending' || filter === 'available') {
+      displayOrders = displayOrders.filter(o => o.status === 'ready_for_pickup');
+    } else if (filter === 'in-transit') {
+      displayOrders = displayOrders.filter(o => o.status === 'shipped');
+    } else if (filter === 'completed') {
+      displayOrders = displayOrders.filter(o => o.status === 'delivered');
+    }
+
+    // Remove duplicates
+    const uniqueOrders = Array.from(new Set(displayOrders.map(o => o.id)))
+      .map(id => displayOrders.find(o => o.id === id));
+
+    setOrders(uniqueOrders);
+  }, [filter, allOrders, deliveryBoy, getAvailableDeliveryOrders, getDeliveryBoyOrders]);
+
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'pending':
+      case 'ready_for_pickup':
         return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'in-transit':
+      case 'shipped':
         return 'bg-blue-100 text-blue-800 border-blue-300';
-      case 'completed':
+      case 'delivered':
         return 'bg-green-100 text-green-800 border-green-300';
       case 'cancelled':
         return 'bg-red-100 text-red-800 border-red-300';
@@ -87,11 +61,11 @@ const DeliveryOrders = () => {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'pending':
+      case 'ready_for_pickup':
         return <FiClock className="text-yellow-600" />;
-      case 'in-transit':
+      case 'shipped':
         return <FiNavigation className="text-blue-600" />;
-      case 'completed':
+      case 'delivered':
         return <FiCheckCircle className="text-green-600" />;
       case 'cancelled':
         return <FiXCircle className="text-red-600" />;
@@ -101,21 +75,14 @@ const DeliveryOrders = () => {
   };
 
   const handleAcceptOrder = (orderId) => {
-    // Update order status to in-transit
-    setOrders((prev) =>
-      prev.map((order) =>
-        order.id === orderId ? { ...order, status: 'in-transit' } : order
-      )
-    );
+    if (!deliveryBoy) return;
+    assignDeliveryBoy(orderId, deliveryBoy);
+    toast.success('Order accepted! You can now start delivery.');
   };
 
   const handleCompleteOrder = (orderId) => {
-    // Update order status to completed
-    setOrders((prev) =>
-      prev.map((order) =>
-        order.id === orderId ? { ...order, status: 'completed' } : order
-      )
-    );
+    updateOrderStatus(orderId, 'delivered');
+    toast.success('Order marked as delivered!');
   };
 
   return (
@@ -128,7 +95,7 @@ const DeliveryOrders = () => {
           className="flex items-center justify-between"
         >
           <h1 className="text-2xl font-bold text-gray-800">Orders</h1>
-          <span className="text-sm text-gray-600">{filteredOrders.length} orders</span>
+          <span className="text-sm text-gray-600">{orders.length} orders</span>
         </motion.div>
 
         {/* Filter Tabs */}
@@ -138,15 +105,14 @@ const DeliveryOrders = () => {
           transition={{ delay: 0.1 }}
           className="flex gap-2 overflow-x-auto pb-2"
         >
-          {['all', 'pending', 'in-transit', 'completed'].map((tab) => (
+          {['all', 'available', 'in-transit', 'completed'].map((tab) => (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
-              className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
-                filter === tab
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${filter === tab
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1).replace('-', ' ')}
             </button>
@@ -155,7 +121,7 @@ const DeliveryOrders = () => {
 
         {/* Orders List */}
         <div className="space-y-4">
-          {filteredOrders.length === 0 ? (
+          {orders.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -165,7 +131,7 @@ const DeliveryOrders = () => {
               <p className="text-gray-600">No orders found</p>
             </motion.div>
           ) : (
-            filteredOrders.map((order, index) => (
+            orders.map((order, index) => (
               <motion.div
                 key={order.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -181,22 +147,26 @@ const DeliveryOrders = () => {
                       {getStatusIcon(order.status)}
                       <p className="font-bold text-gray-800">{order.id}</p>
                     </div>
-                    <p className="text-sm text-gray-600">{order.customer}</p>
-                    <p className="text-xs text-gray-500">{order.phone}</p>
+                    <p className="text-sm text-gray-600">{order.customer?.name || 'Guest'}</p>
+                    <p className="text-xs text-gray-500">{order.customer?.phone || 'No phone'}</p>
                   </div>
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
                       order.status
                     )}`}
                   >
-                    {order.status.replace('-', ' ')}
+                    {order.status?.replace('_', ' ').replace('-', ' ')}
                   </span>
                 </div>
 
                 {/* Address */}
                 <div className="flex items-start gap-2 mb-3 p-3 bg-gray-50 rounded-xl">
                   <FiMapPin className="text-primary-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-gray-700">{order.address}</p>
+                  <p className="text-sm text-gray-700">
+                    {typeof order.address === 'string'
+                      ? order.address
+                      : `${order.address?.address || ''}, ${order.address?.city || ''} ${order.address?.pincode || ''}`}
+                  </p>
                 </div>
 
                 {/* Order Details */}
@@ -208,19 +178,19 @@ const DeliveryOrders = () => {
                     </div>
                     <div className="flex items-center gap-1">
                       <FiClock />
-                      <span>{order.estimatedTime}</span>
+                      <span>{order.estimatedTime || '15-30 min'}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <FiNavigation />
-                      <span>{order.distance}</span>
+                      <span>{order.distance || '2-5 km'}</span>
                     </div>
                   </div>
-                  <p className="font-bold text-primary-600">{formatPrice(order.amount)}</p>
+                  <p className="font-bold text-primary-600">{formatPrice(order.total || order.amount)}</p>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex gap-2">
-                  {order.status === 'pending' && (
+                  {order.status === 'ready_for_pickup' && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -231,7 +201,7 @@ const DeliveryOrders = () => {
                       Accept Order
                     </button>
                   )}
-                  {order.status === 'in-transit' && (
+                  {order.status === 'shipped' && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

@@ -11,23 +11,13 @@ import { motion } from "framer-motion";
 import DataTable from "../../components/DataTable";
 import Badge from "../../../../shared/components/Badge";
 // import { formatDateTime } from '../../utils/adminHelpers';
-import { mockOrders } from "../../../../data/adminMockData";
+import { useOrderStore } from "../../../../shared/store/orderStore";
 
 const OrderTracking = () => {
   const navigate = useNavigate();
-  const [orders, setOrders] = useState([]);
+  const { orders } = useOrderStore(); // Use global store
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
-
-  useEffect(() => {
-    const savedOrders = localStorage.getItem("admin-orders");
-    if (savedOrders) {
-      setOrders(JSON.parse(savedOrders));
-    } else {
-      setOrders(mockOrders);
-      localStorage.setItem("admin-orders", JSON.stringify(mockOrders));
-    }
-  }, []);
 
   const filteredOrders = orders.filter(
     (order) =>
@@ -175,16 +165,16 @@ const OrderTracking = () => {
                     <div key={index} className="flex items-start gap-3">
                       <div
                         className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${step.status === "completed"
-                            ? "bg-green-100 text-green-600"
-                            : "bg-gray-100 text-gray-400"
+                          ? "bg-green-100 text-green-600"
+                          : "bg-gray-100 text-gray-400"
                           }`}>
                         <Icon className="text-sm" />
                       </div>
                       <div className="flex-1">
                         <p
                           className={`font-medium ${step.status === "completed"
-                              ? "text-gray-800"
-                              : "text-gray-400"
+                            ? "text-gray-800"
+                            : "text-gray-400"
                             }`}>
                           {step.label}
                         </p>

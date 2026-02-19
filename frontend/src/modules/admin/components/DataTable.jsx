@@ -36,7 +36,7 @@ const DataTable = ({
   // Pagination
   const paginatedData = useMemo(() => {
     if (!pagination) return sortedData;
-    
+
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return sortedData.slice(startIndex, endIndex);
@@ -63,7 +63,7 @@ const DataTable = ({
   const actionsColumn = columns.find(col => col.key === 'actions');
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm overflow-hidden ${className}`}>
+    <div className={`bg-white rounded-xl shadow-sm ${className}`}>
       {/* Mobile Card View - Show on mobile, hide on desktop */}
       <div className="md:hidden">
         {paginatedData.length === 0 ? (
@@ -76,9 +76,8 @@ const DataTable = ({
               <div
                 key={row.id || index}
                 onClick={() => onRowClick && onRowClick(row)}
-                className={`p-4 ${
-                  onRowClick ? 'cursor-pointer hover:bg-gray-50' : ''
-                } transition-colors`}
+                className={`p-4 ${onRowClick ? 'cursor-pointer hover:bg-gray-50' : ''
+                  } transition-colors`}
               >
                 <div className="space-y-2.5">
                   {primaryColumns.map((column) => {
@@ -86,10 +85,10 @@ const DataTable = ({
                     const value = column.render
                       ? column.render(rawValue, row)
                       : rawValue;
-                    
+
                     // Skip rendering if value is empty/null
                     if (!value && value !== 0) return null;
-                    
+
                     // Ensure value is renderable (not an object/array)
                     let displayValue = value;
                     if (typeof value === 'object' && value !== null && !React.isValidElement(value)) {
@@ -99,7 +98,7 @@ const DataTable = ({
                         displayValue = JSON.stringify(value);
                       }
                     }
-                    
+
                     return (
                       <div key={column.key} className="flex items-start gap-2">
                         <span className="text-xs font-semibold text-gray-600 flex-shrink-0 min-w-[80px] sm:min-w-[100px]">
@@ -124,18 +123,17 @@ const DataTable = ({
       </div>
 
       {/* Desktop Table View - Hide on mobile, show on desktop */}
-      <div className="hidden md:block overflow-x-auto scrollbar-admin">
+      <div className="hidden md:block overflow-x-auto overflow-y-visible scrollbar-admin">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider ${
-                    sortable && column.sortable !== false
+                  className={`px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider ${sortable && column.sortable !== false
                       ? 'cursor-pointer hover:bg-gray-100'
                       : ''
-                  }`}
+                    }`}
                   onClick={() => column.sortable !== false && handleSort(column.key)}
                 >
                   <div className="flex items-center gap-2">
@@ -171,16 +169,15 @@ const DataTable = ({
                 <tr
                   key={row.id || index}
                   onClick={() => onRowClick && onRowClick(row)}
-                  className={`${
-                    onRowClick ? 'cursor-pointer hover:bg-gray-50' : ''
-                  } transition-colors`}
+                  className={`${onRowClick ? 'cursor-pointer hover:bg-gray-50' : ''
+                    } transition-colors`}
                 >
                   {columns.map((column) => {
                     const rawValue = row[column.key];
                     let displayValue = column.render
                       ? column.render(rawValue, row)
                       : rawValue;
-                    
+
                     // Ensure value is renderable (not an object/array)
                     if (typeof displayValue === 'object' && displayValue !== null && !React.isValidElement(displayValue)) {
                       if (Array.isArray(displayValue)) {
@@ -189,7 +186,7 @@ const DataTable = ({
                         displayValue = JSON.stringify(displayValue);
                       }
                     }
-                    
+
                     return (
                       <td
                         key={column.key}

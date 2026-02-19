@@ -13,7 +13,9 @@ const AllOrders = lazy(() => import('./pages/orders/AllOrders'));
 const OrderTracking = lazy(() => import('./pages/orders/OrderTracking'));
 const OrderNotifications = lazy(() => import('./pages/orders/OrderNotifications'));
 const OrderDetail = lazy(() => import('./pages/OrderDetail'));
+const Invoice = lazy(() => import('./pages/orders/Invoice'));
 const ReturnRequests = lazy(() => import('./pages/ReturnRequests'));
+const ReturnRequestDetail = lazy(() => import('./pages/ReturnRequestDetail'));
 const RefundPolicy = lazy(() => import('./pages/policies/RefundPolicy'));
 
 // Products
@@ -125,11 +127,13 @@ const AdminRoutes = () => {
                         <Route path="order-tracking" element={<OrderTracking />} />
                         <Route path="order-notifications" element={<OrderNotifications />} />
                         <Route path="detail/:id" element={<OrderDetail />} />
+                        <Route path="invoice/:id" element={<Invoice />} />
                     </Route>
 
 
                     {/* Return Requests */}
                     <Route path="return-requests" element={<ReturnRequests />} />
+                    <Route path="return-requests/:id" element={<ReturnRequestDetail />} />
 
                     {/* Products */}
                     <Route path="products">
