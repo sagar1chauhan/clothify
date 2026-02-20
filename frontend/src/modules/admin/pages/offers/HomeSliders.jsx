@@ -1,60 +1,39 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { FiPlus, FiEdit, FiTrash2, FiImage } from "react-icons/fi";
+import { FiPlus, FiEdit, FiTrash2 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import DataTable from "../../components/DataTable";
 import ConfirmModal from "../../components/ConfirmModal";
 import AnimatedSelect from "../../components/AnimatedSelect";
 import toast from "react-hot-toast";
-const heroSlide1 = "https://placehold.co/1200x400?text=Summer+Sale";
-const heroSlide2 = "https://placehold.co/1200x400?text=New+Arrivals";
+import { useBannerStore } from "../../../../shared/store/bannerStore";
 import Button from "../../components/Button";
 
 const HomeSliders = () => {
   const location = useLocation();
   const isAppRoute = location.pathname.startsWith("/app");
-  const [sliders, setSliders] = useState([
-    {
-      id: 1,
-      title: "Summer Sale",
-      image: heroSlide1,
-      link: "/offers",
-      order: 1,
-      status: "active",
-    },
-    {
-      id: 2,
-      title: "New Arrivals",
-      image: heroSlide2,
-      link: "/products",
-      order: 2,
-      status: "active",
-    },
-  ]);
+  const { banners, initialize, addBanner, updateBanner, deleteBanner } = useBannerStore();
+
   const [editingSlider, setEditingSlider] = useState(null);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
 
+  useEffect(() => {
+    initialize();
+  }, []);
+
   const handleSave = (sliderData) => {
     if (editingSlider && editingSlider.id) {
-      setSliders(
-        sliders.map((s) =>
-          s.id === editingSlider.id
-            ? { ...sliderData, id: editingSlider.id }
-            : s
-        )
-      );
+      updateBanner(editingSlider.id, sliderData);
       toast.success("Slider updated");
     } else {
-      const newId =
-        sliders.length > 0 ? Math.max(...sliders.map((s) => s.id)) + 1 : 1;
-      setSliders([...sliders, { ...sliderData, id: newId }]);
+      addBanner(sliderData);
       toast.success("Slider added");
     }
     setEditingSlider(null);
   };
 
   const handleDelete = () => {
-    setSliders(sliders.filter((s) => s.id !== deleteModal.id));
+    deleteBanner(deleteModal.id);
     setDeleteModal({ isOpen: false, id: null });
     toast.success("Slider deleted");
   };
@@ -146,6 +125,8 @@ const HomeSliders = () => {
               link: "",
               order: 1,
               status: "active",
+              subtitle: "",
+              cta: "Shop Now"
             })
           }
           variant="primary"
@@ -157,7 +138,7 @@ const HomeSliders = () => {
 
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
         <DataTable
-          data={sliders}
+          data={banners}
           columns={columns}
           pagination={true}
           itemsPerPage={10}
@@ -218,7 +199,7 @@ const HomeSliders = () => {
                 exit="exit"
                 onClick={(e) => e.stopPropagation()}
                 className={`bg-white ${isAppRoute ? "rounded-b-3xl" : "rounded-t-3xl"
-                  } sm:rounded-xl shadow-xl p-6 max-w-md w-full pointer-events-auto`}
+                  } sm:rounded-xl shadow-xl p-6 max-w-md w-full pointer-events-auto overflow-y-auto max-h-[90vh] shadow-2xl`}
                 style={{ willChange: "transform" }}>
                 <h3 className="text-lg font-bold text-gray-800 mb-4">
                   {editingSlider.id ? "Edit Slider" : "Add Slider"}
@@ -233,11 +214,13 @@ const HomeSliders = () => {
                       link: formData.get("link"),
                       order: parseInt(formData.get("order")),
                       status: formData.get("status"),
+                      subtitle: formData.get("subtitle"),
+                      cta: formData.get("cta")
                     });
                   }}
                   className="space-y-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-gray-500 ml-1">Slider Title</label>
+                    <label className="text-xs font-semibold text-gray-500 ml-1 uppercase tracking-wider">Slider Title</label>
                     <input
                       type="text"
                       name="title"
@@ -248,7 +231,29 @@ const HomeSliders = () => {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-gray-500 ml-1">Image URL</label>
+                    <label className="text-xs font-semibold text-gray-500 ml-1 uppercase tracking-wider">Subtitle</label>
+                    <input
+                      type="text"
+                      name="subtitle"
+                      defaultValue={editingSlider.subtitle || ""}
+                      placeholder="e.g. Get 70% off"
+                      required
+                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-500 ml-1 uppercase tracking-wider">Button Text (CTA)</label>
+                    <input
+                      type="text"
+                      name="cta"
+                      defaultValue={editingSlider.cta || "Shop Now"}
+                      placeholder="Shop Now"
+                      required
+                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-500 ml-1 uppercase tracking-wider">Image URL</label>
                     <input
                       type="text"
                       name="image"
@@ -259,7 +264,7 @@ const HomeSliders = () => {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-gray-500 ml-1">Redirect Link</label>
+                    <label className="text-xs font-semibold text-gray-500 ml-1 uppercase tracking-wider">Redirect Link</label>
                     <input
                       type="text"
                       name="link"
@@ -271,7 +276,7 @@ const HomeSliders = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500 ml-1">Display Order</label>
+                      <label className="text-xs font-semibold text-gray-500 ml-1 uppercase tracking-wider">Display Order</label>
                       <input
                         type="number"
                         name="order"
@@ -282,7 +287,7 @@ const HomeSliders = () => {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500 ml-1">Status</label>
+                      <label className="text-xs font-semibold text-gray-500 ml-1 uppercase tracking-wider">Status</label>
                       <AnimatedSelect
                         name="status"
                         value={editingSlider.status || "active"}

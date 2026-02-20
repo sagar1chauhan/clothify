@@ -199,6 +199,7 @@ export const products = [
     },
     {
         id: 4,
+        vendorId: 2,
         brand: 'OUTZIDR',
         name: 'Blue Square Neck Flat Knit Tank',
         division: 'Women',
@@ -217,6 +218,7 @@ export const products = [
     },
     {
         id: 5,
+        vendorId: 2,
         brand: 'Slikk X Revolte',
         name: 'Solid Regular Top',
         division: 'Women',
@@ -235,6 +237,7 @@ export const products = [
     },
     {
         id: 6,
+        vendorId: 3,
         brand: 'Allen Solly',
         name: 'Men Blue Slim Fit Formal Shirt',
         division: 'Men',
@@ -253,6 +256,7 @@ export const products = [
     },
     {
         id: 7,
+        vendorId: 3,
         brand: 'Roadster',
         name: 'Women Solid Denim Jacket',
         division: 'Women',
@@ -271,6 +275,7 @@ export const products = [
     },
     {
         id: 8,
+        vendorId: 4,
         brand: 'Highlander',
         name: 'Men Olive Green Cargo Pants',
         division: 'Men',
@@ -289,6 +294,7 @@ export const products = [
     },
     {
         id: 9,
+        vendorId: 4,
         brand: 'H&M',
         name: 'Women Knitted Sweater',
         division: 'Women',
@@ -307,6 +313,7 @@ export const products = [
     },
     {
         id: 10,
+        vendorId: 4,
         brand: 'Snitch',
         name: 'Men Black Oversized Bomber Jacket',
         division: 'Men',

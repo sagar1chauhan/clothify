@@ -102,7 +102,8 @@ const ProductForm = () => {
       setFormData({
         name: product.name || "",
         unit: product.unit || "",
-        price: product.price || "",
+        // Vendor sees their own price (base price)
+        price: product.vendorPrice || product.price || "",
         originalPrice: product.originalPrice || product.price || "",
         image: product.image || "",
         images: product.images || [],
@@ -269,7 +270,11 @@ const ProductForm = () => {
       const updatedProduct = {
         ...products[productIndex],
         ...formData,
-        price: parseFloat(formData.price),
+        // For vendor, 'price' field in form is actually their base price
+        vendorPrice: parseFloat(formData.price),
+        // We keep the admin's selling price if it was already set higher, 
+        // or update it if vendor price is now higher than selling price
+        price: Math.max(products[productIndex].price || 0, parseFloat(formData.price)),
         originalPrice: formData.originalPrice
           ? parseFloat(formData.originalPrice)
           : null,
@@ -299,7 +304,9 @@ const ProductForm = () => {
       const newProduct = {
         id: newId,
         ...formData,
+        // Initial selling price is same as vendor base price
         price: parseFloat(formData.price),
+        vendorPrice: parseFloat(formData.price),
         originalPrice: formData.originalPrice
           ? parseFloat(formData.originalPrice)
           : null,

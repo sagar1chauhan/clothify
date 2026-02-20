@@ -17,6 +17,8 @@ import { formatPrice } from '../../../shared/utils/helpers';
 import toast from 'react-hot-toast';
 import { useOrderStore } from '../../../shared/store/orderStore';
 import { useDeliveryAuthStore } from '../store/deliveryStore';
+import GoogleMapsTracking from '../components/Tracking/GoogleMapsTracking';
+
 
 const DeliveryOrderDetail = () => {
   const { id } = useParams();
@@ -198,7 +200,8 @@ const DeliveryOrderDetail = () => {
         </motion.div>
 
         {/* Map - Show when order is accepted */}
-        {(order.status === 'shipped' || order.status === 'delivered') && (order.latitude || order.address?.latitude) && (
+        {console.log('Order Status:', order.status)}
+        {(order.status === 'shipped' || order.status === 'delivered') && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -207,29 +210,30 @@ const DeliveryOrderDetail = () => {
           >
             <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
               <FiMapPin className="text-primary-600" />
-              Delivery Location
+              Delivery Tracking (Debug: Component Rendered)
             </h2>
-            <div className="rounded-xl overflow-hidden border border-gray-200" style={{ height: '300px' }}>
-              <iframe
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                loading="lazy"
-                allowFullScreen
-                referrerPolicy="no-referrer-when-downgrade"
-                src={`https://www.openstreetmap.org/export/embed.html?bbox=${(order.longitude || -74.006) - 0.01},${(order.latitude || 40.7128) - 0.01},${(order.longitude || -74.006) + 0.01},${(order.latitude || 40.7128) + 0.01}&layer=mapnik&marker=${order.latitude || 40.7128},${order.longitude || -74.006}`}
-                title="Delivery Location Map"
-              />
-            </div>
-            <div className="mt-3">
-              <button
-                onClick={openInGoogleMaps}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl font-semibold text-sm hover:bg-primary-700 transition-colors"
-              >
-                <FiNavigation />
-                Open in Google Maps
-              </button>
-            </div>
+            <GoogleMapsTracking
+              customerLocation={{
+                lat: parseFloat(order.latitude || order.address?.latitude || 40.7128),
+                lng: parseFloat(order.longitude || order.address?.longitude || -74.006)
+              }}
+              storeLocation={{
+                lat: parseFloat(order.pickupLatitude || 40.7306),
+                lng: parseFloat(order.pickupLongitude || -73.9352)
+              }}
+              deliveryLocation={null} // Set to current GPS location when available
+              isTracking={order.status === 'shipped'}
+              showRoute={true}
+              routeOrigin={{
+                lat: parseFloat(order.pickupLatitude || 40.7306),
+                lng: parseFloat(order.pickupLongitude || -73.9352)
+              }}
+              routeDestination={{
+                lat: parseFloat(order.latitude || order.address?.latitude || 40.7128),
+                lng: parseFloat(order.longitude || order.address?.longitude || -74.006)
+              }}
+              destinationName={order.customer?.name}
+            />
           </motion.div>
         )}
 

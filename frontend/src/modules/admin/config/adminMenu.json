@@ -99,6 +99,7 @@
     "route": "/admin/offers",
     "children": [
       "Home Sliders",
+      "Daily Deals",
       "Festival Offers"
     ]
   },
@@ -174,4 +175,3 @@
     ]
   }
 ]
-

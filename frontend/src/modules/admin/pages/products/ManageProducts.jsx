@@ -14,6 +14,7 @@ import { products as initialProducts } from "../../../../data/products";
 
 import { useCategoryStore } from "../../../../shared/store/categoryStore";
 import { useBrandStore } from "../../../../shared/store/brandStore";
+import { useVendorStore } from "../../../../shared/store/vendorStore";
 import toast from "react-hot-toast";
 
 const ManageProducts = () => {
@@ -21,10 +22,14 @@ const ManageProducts = () => {
   const [products, setProducts] = useState([]);
   const { categories, initialize: initCategories } = useCategoryStore();
   const { brands, initialize: initBrands } = useBrandStore();
+  const { vendors, initialize: initVendors } = useVendorStore();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedBrand, setSelectedBrand] = useState("all");
+  const [selectedVendor, setSelectedVendor] = useState("all");
+
   const [deleteModal, setDeleteModal] = useState({
     isOpen: false,
     productId: null,
@@ -37,6 +42,7 @@ const ManageProducts = () => {
   useEffect(() => {
     initCategories();
     initBrands();
+    initVendors();
     loadProducts();
   }, []);
 
@@ -49,16 +55,23 @@ const ManageProducts = () => {
     // Normalize initial products for admin use
     const normalizedProducts = productsList.map((p) => {
       const hasStockQuantity = p.stockQuantity !== undefined && p.stockQuantity !== null;
-      const hasPrice = p.price !== undefined && p.price !== null;
+      const hasPrice = p.price !== undefined || p.discountedPrice !== undefined;
+      const hasVendorPrice = p.vendorPrice !== undefined && p.vendorPrice !== null;
       const hasStock = !!p.stock;
 
-      if (!hasStockQuantity || !hasPrice || !hasStock) {
+      const price = p.price || p.discountedPrice || 0;
+      const vendorPrice = p.vendorPrice || price;
+
+      if (!hasStockQuantity || !hasPrice || !hasStock || !hasVendorPrice) {
         needsUpdate = true;
       }
 
       return {
         ...p,
-        price: hasPrice ? p.price : (p.discountedPrice || 0),
+        price: price,
+        originalPrice: p.originalPrice || price,
+        discountedPrice: p.discountedPrice || price,
+        vendorPrice: vendorPrice,
         stockQuantity: hasStockQuantity ? p.stockQuantity : (Math.floor(Math.random() * 100) + 10),
         stock: hasStock ? p.stock : "in_stock",
         categoryId: p.categoryId || (p.category === "Top Wear" ? 1 : p.category === "Bottom Wear" ? 2 : 3),
@@ -77,7 +90,8 @@ const ManageProducts = () => {
 
     if (searchQuery) {
       filtered = filtered.filter((product) =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.brand?.toLowerCase()?.includes(searchQuery.toLowerCase())
       );
     }
 
@@ -97,8 +111,14 @@ const ManageProducts = () => {
       );
     }
 
+    if (selectedVendor !== "all") {
+      filtered = filtered.filter(
+        (product) => product.vendorId === parseInt(selectedVendor)
+      );
+    }
+
     return filtered;
-  }, [products, searchQuery, selectedStatus, selectedCategory, selectedBrand]);
+  }, [products, searchQuery, selectedStatus, selectedCategory, selectedBrand, selectedVendor]);
 
   const columns = [
     {
@@ -120,15 +140,49 @@ const ManageProducts = () => {
               e.target.src = "https://placehold.co/50x50?text=Product";
             }}
           />
-          <span className="font-medium">{value}</span>
+          <div className="flex flex-col">
+            <span className="font-medium text-gray-900 leading-tight">{value}</span>
+            <span className="text-[10px] text-gray-500 uppercase tracking-wider">{row.brand || 'No Brand'}</span>
+          </div>
         </div>
       ),
     },
     {
-      key: "price",
-      label: "Price",
+      key: "vendorId",
+      label: "Vendor",
       sortable: true,
-      render: (value, row) => formatPrice(value || row.discountedPrice || 0),
+      render: (value) => {
+        const vendor = vendors.find(v => v.id === value);
+        return (
+          <div className="flex flex-col">
+            <span className="font-medium text-gray-800">{vendor ? vendor.storeName : "Admin"}</span>
+            {vendor && <span className="text-[10px] text-gray-500 uppercase">{vendor.name}</span>}
+          </div>
+        );
+      }
+    },
+    {
+      key: "vendorPrice",
+      label: "Vendor Price",
+      sortable: true,
+      render: (value) => (
+        <span className="text-gray-600 font-medium">{formatPrice(value || 0)}</span>
+      ),
+    },
+    {
+      key: "price",
+      label: "Selling Price",
+      sortable: true,
+      render: (value, row) => (
+        <div className="flex flex-col">
+          <span className="text-primary-600 font-bold">{formatPrice(value || 0)}</span>
+          {row.vendorPrice < value && (
+            <span className="text-[10px] text-green-600 font-bold">
+              +{formatPrice(value - row.vendorPrice)} Margin
+            </span>
+          )}
+        </div>
+      ),
     },
     {
       key: "stockQuantity",
@@ -167,7 +221,8 @@ const ManageProducts = () => {
               e.stopPropagation();
               setProductFormModal({ isOpen: true, productId: row.id });
             }}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            title="Edit Price & Details">
             <FiEdit />
           </button>
           <button
@@ -242,6 +297,17 @@ const ManageProducts = () => {
                 ...categories
                   .filter((cat) => cat.isActive !== false)
                   .map((cat) => ({ value: String(cat.id), label: cat.name })),
+              ]}
+              className="w-full sm:w-auto min-w-[160px]"
+            />
+
+            <AnimatedSelect
+              value={selectedVendor}
+              onChange={(e) => setSelectedVendor(e.target.value)}
+              options={[
+                { value: "all", label: "All Vendors" },
+                ...vendors
+                  .map((v) => ({ value: String(v.id), label: v.storeName })),
               ]}
               className="w-full sm:w-auto min-w-[160px]"
             />
