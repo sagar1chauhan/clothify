@@ -1,4 +1,14 @@
 {
+  "name": "clothify-root",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspace=frontend",
+    "preview": "npm run preview --workspace=frontend"
+  },
   "devDependencies": {
     "vite": "^7.3.1"
   }
