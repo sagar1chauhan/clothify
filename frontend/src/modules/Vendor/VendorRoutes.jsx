@@ -8,7 +8,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const Products = lazy(() => import('./pages/Products'));
-const AddProduct = lazy(() => import('./pages/products/AddProduct'));
+const ProductForm = lazy(() => import('./pages/products/ProductForm'));
 const ManageProducts = lazy(() => import('./pages/products/ManageProducts'));
 const BulkUpload = lazy(() => import('./pages/products/BulkUpload'));
 const Orders = lazy(() => import('./pages/Orders'));
@@ -73,7 +73,8 @@ const VendorRoutes = () => {
                     <Route path="products">
                         <Route index element={<Navigate to="manage-products" replace />} />
                         <Route path="manage-products" element={<ManageProducts />} />
-                        <Route path="add-product" element={<AddProduct />} />
+                        <Route path="add-product" element={<ProductForm />} />
+                        <Route path=":id" element={<ProductForm />} />
                         <Route path="bulk-upload" element={<BulkUpload />} />
                         <Route path="product-faqs" element={<ProductFAQs />} />
                         <Route path="product-attributes" element={<ProductAttributes />} />

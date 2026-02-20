@@ -17,8 +17,8 @@ const CategoryForm = ({ category, parentId, onClose, onSave }) => {
   const parentCategory = parentId
     ? getCategoryById(parentId)
     : category?.parentId
-    ? getCategoryById(category.parentId)
-    : null;
+      ? getCategoryById(category.parentId)
+      : null;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -57,6 +57,26 @@ const CategoryForm = ({ category, parentId, onClose, onSave }) => {
       ...formData,
       [name]: type === "checkbox" ? checked : value === "" ? null : value,
     });
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("Image size should be less than 2MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, image: reader.result });
+        toast.success("Image uploaded successfully");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleClearImage = () => {
+    setFormData({ ...formData, image: "" });
   };
 
   const handleSubmit = (e) => {
@@ -104,9 +124,8 @@ const CategoryForm = ({ category, parentId, onClose, onSave }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className={`fixed inset-0 z-[10000] flex ${
-            isAppRoute ? "items-start pt-[10px]" : "items-end"
-          } sm:items-center justify-center p-4 pointer-events-none`}>
+          className={`fixed inset-0 z-[10000] flex ${isAppRoute ? "items-start pt-[10px]" : "items-end"
+            } sm:items-center justify-center p-4 pointer-events-none`}>
           <motion.div
             variants={{
               hidden: {
@@ -140,9 +159,8 @@ const CategoryForm = ({ category, parentId, onClose, onSave }) => {
             animate="visible"
             exit="exit"
             onClick={(e) => e.stopPropagation()}
-            className={`bg-white ${
-              isAppRoute ? "rounded-b-3xl" : "rounded-t-3xl"
-            } sm:rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-admin pointer-events-auto`}
+            className={`bg-white ${isAppRoute ? "rounded-b-3xl" : "rounded-t-3xl"
+              } sm:rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-admin pointer-events-auto`}
             style={{ willChange: "transform" }}>
             <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between z-10">
               <div className="flex-1">
@@ -150,8 +168,8 @@ const CategoryForm = ({ category, parentId, onClose, onSave }) => {
                   {isEdit
                     ? "Edit Category"
                     : isSubcategory
-                    ? "Create Subcategory"
-                    : "Create Category"}
+                      ? "Create Subcategory"
+                      : "Create Category"}
                 </h2>
                 {isSubcategory && parentCategory && (
                   <p className="text-sm text-gray-600 mt-1">
@@ -257,28 +275,69 @@ const CategoryForm = ({ category, parentId, onClose, onSave }) => {
                 </h3>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Image URL
+                    Image
                   </label>
-                  <input
-                    type="text"
-                    name="image"
-                    value={formData.image}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="data/categories/category.png"
-                  />
-                  {formData.image && (
-                    <div className="mt-4">
-                      <img
-                        src={formData.image}
-                        alt="Preview"
-                        className="w-32 h-32 object-cover rounded-lg border border-gray-200"
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                        }}
-                      />
+                  <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="flex-1">
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
+                          Image URL
+                        </label>
+                        <input
+                          type="text"
+                          name="image"
+                          value={formData.image || ""}
+                          onChange={handleChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                          placeholder="https://example.com/image.jpg"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
+                          Upload File
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                            id="category-image-upload"
+                          />
+                          <label
+                            htmlFor="category-image-upload"
+                            className="flex items-center justify-center gap-2 w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-500 hover:bg-primary-50 transition-all text-sm font-semibold text-gray-600"
+                          >
+                            <FiUpload />
+                            <span>Select Image</span>
+                          </label>
+                        </div>
+                      </div>
                     </div>
-                  )}
+
+                    {formData.image && (
+                      <div className="relative inline-block mt-4 group">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Preview</p>
+                        <div className="relative w-32 h-32 rounded-xl overflow-hidden border-2 border-gray-100 shadow-sm">
+                          <img
+                            src={formData.image}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleClearImage}
+                            className="absolute top-1 right-1 p-1.5 bg-red-500 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity active:scale-95"
+                          >
+                            <FiX size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

@@ -83,7 +83,15 @@ const Header = () => {
                     className="px-4 py-2.5 flex justify-between items-center group cursor-pointer transition-colors border-b border-white/10 bg-transparent"
                 >
                     <div className="flex items-center gap-3 overflow-hidden">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-colors bg-white/20">
+                        {/* Delivery Time Badge */}
+                        <div className="flex flex-col items-center justify-center bg-white/10 backdrop-blur-md px-2 py-1 rounded-xl border border-white/20 shrink-0 min-w-[50px]">
+                            <span className="text-[11px] font-black text-[#39ff14] leading-tight flex flex-col items-center">
+                                <span>60</span>
+                                <span className="text-[7px] text-white/70 -mt-1 tracking-tighter uppercase font-bold">Mins</span>
+                            </span>
+                        </div>
+
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-colors bg-white/20 shrink-0">
                             <MapPin size={16} className="text-white" />
                         </div>
                         <div className="flex flex-col min-w-0">

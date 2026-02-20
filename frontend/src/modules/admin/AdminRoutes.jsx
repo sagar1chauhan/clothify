@@ -68,6 +68,7 @@ const CashCollection = lazy(() => import('./pages/delivery/CashCollection'));
 
 // Marketing & Offers
 const Offers = lazy(() => import('./pages/offers/HomeSliders'));
+const DailyDeals = lazy(() => import('./pages/offers/DailyDeals'));
 const FestivalOffers = lazy(() => import('./pages/offers/FestivalOffers'));
 const PromoCodes = lazy(() => import('./pages/PromoCodes'));
 const Banners = lazy(() => import('./pages/Banners'));
@@ -209,6 +210,7 @@ const AdminRoutes = () => {
                     {/* Marketing */}
                     <Route path="offers">
                         <Route path="home-sliders" element={<Offers />} />
+                        <Route path="daily-deals" element={<DailyDeals />} />
                         <Route path="festival-offers" element={<FestivalOffers />} />
                     </Route>
                     <Route path="promocodes" element={<PromoCodes />} />
