@@ -16,10 +16,10 @@ const CategoryBanners = () => {
         <div className="py-5 md:py-10">
             <div className="container">
                 {/* Dynamic Categories Row */}
-                <div className="grid grid-cols-3 lg:grid-cols-6 gap-4 md:gap-5 lg:gap-8 mb-10 md:mb-15 max-sm:flex max-sm:overflow-x-auto max-sm:gap-4 max-sm:pb-3 max-sm:scrollbar-hide">
+                <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-6 gap-3 md:gap-6">
                     {activeCategories.map((category) => (
-                        <div key={category.id} className="flex flex-col items-center cursor-pointer transition-all group max-sm:min-w-[120px] max-sm:shrink-0">
-                            <div className="w-full aspect-square rounded-2xl overflow-hidden mb-4 shadow-sm bg-gray-100">
+                        <div key={category.id} className="flex flex-col items-center cursor-pointer transition-all group">
+                            <div className="w-full aspect-square rounded-xl md:rounded-2xl overflow-hidden mb-2 md:mb-4 shadow-sm bg-gray-100">
                                 <img
                                     src={category.image || 'https://placehold.co/150?text=' + category.name}
                                     alt={category.name}
@@ -27,7 +27,7 @@ const CategoryBanners = () => {
                                     onError={(e) => { e.target.src = 'https://placehold.co/150?text=' + category.name }}
                                 />
                             </div>
-                            <p className="text-sm md:text-base font-bold text-center text-text-primary">{category.name}</p>
+                            <p className="text-[10px] sm:text-xs md:text-sm font-bold text-center text-text-primary uppercase tracking-tight line-clamp-1">{category.name}</p>
                         </div>
                     ))}
                 </div>

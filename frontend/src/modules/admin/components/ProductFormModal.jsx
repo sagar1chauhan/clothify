@@ -22,6 +22,8 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
     name: "",
     unit: "",
     price: "",
+    vendorPrice: "",
+    margin: 0,
     originalPrice: "",
     image: "",
     images: [],
@@ -81,6 +83,8 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
           name: product.name || "",
           unit: product.unit || "",
           price: product.price || "",
+          vendorPrice: product.vendorPrice || product.price || "",
+          margin: product.vendorPrice ? (product.price - product.vendorPrice) : 0,
           originalPrice: product.originalPrice || product.price || "",
           image: product.image || "",
           images: product.images || [],
@@ -294,6 +298,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
             ...formData,
             id: parseInt(productId),
             price: price,
+            vendorPrice: parseFloat(formData.vendorPrice) || price,
             originalPrice: originalPrice,
             // Add fields expected by user app
             discountedPrice: price,
@@ -324,6 +329,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
         id: newId,
         ...formData,
         price: price,
+        vendorPrice: parseFloat(formData.vendorPrice) || price,
         originalPrice: originalPrice,
         // Add fields expected by user app
         discountedPrice: price,
@@ -514,29 +520,92 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
 
                   {/* Pricing */}
                   <div>
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">
-                      Pricing
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                      <span>Pricing & Margins</span>
+                      <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Admin Control</span>
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100 italic mb-4">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Price <span className="text-red-500">*</span>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                          Vendor Base Price
                         </label>
-                        <input
-                          type="number"
-                          name="price"
-                          value={formData.price}
-                          onChange={handleChange}
-                          required
-                          min="0"
-                          step="0.01"
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        />
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
+                          <input
+                            type="number"
+                            name="vendorPrice"
+                            value={formData.vendorPrice}
+                            onChange={(e) => {
+                              const v = parseFloat(e.target.value) || 0;
+                              setFormData(prev => ({
+                                ...prev,
+                                vendorPrice: v,
+                                price: v + (prev.margin || 0)
+                              }));
+                            }}
+                            className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-primary-500"
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-1 italic">Price set by the vendor</p>
                       </div>
 
                       <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                          Your Margin (+)
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
+                          <input
+                            type="number"
+                            name="margin"
+                            value={formData.margin}
+                            onChange={(e) => {
+                              const m = parseFloat(e.target.value) || 0;
+                              setFormData(prev => ({
+                                ...prev,
+                                margin: m,
+                                price: (parseFloat(prev.vendorPrice) || 0) + m
+                              }));
+                            }}
+                            className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg bg-blue-50 focus:ring-2 focus:ring-blue-500 font-bold text-blue-700"
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <p className="text-[10px] text-blue-400 mt-1 italic">Profit added by admin</p>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-primary-600 uppercase tracking-wider mb-2">
+                          Final Selling Price
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-400">₹</span>
+                          <input
+                            type="number"
+                            name="price"
+                            value={formData.price}
+                            onChange={(e) => {
+                              const p = parseFloat(e.target.value) || 0;
+                              setFormData(prev => ({
+                                ...prev,
+                                price: p,
+                                margin: p - (parseFloat(prev.vendorPrice) || 0)
+                              }));
+                            }}
+                            required
+                            className="w-full pl-8 pr-3 py-2 text-sm border-2 border-primary-500 rounded-lg bg-primary-50 focus:outline-none font-bold text-primary-800"
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <p className="text-[10px] text-primary-400 mt-1 italic font-medium">Customer will see this price</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Original Price (for discount)
+                          Original Price (Strike-through)
                         </label>
                         <input
                           type="number"
@@ -546,6 +615,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                           min="0"
                           step="0.01"
                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          placeholder="e.g., 999"
                         />
                       </div>
                     </div>

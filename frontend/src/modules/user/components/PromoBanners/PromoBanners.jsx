@@ -1,16 +1,27 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useCategory } from '../../context/CategoryContext';
+import { useDealsStore } from '../../../../shared/store/dealsStore';
 
 const PromoBanners = () => {
     const { activeCategory, getCategoryColor } = useCategory();
     const currentBgColor = getCategoryColor(activeCategory);
 
+    // Use explicit selectors for better reactivity
+    const deals = useDealsStore(state => state.deals);
+    const initialize = useDealsStore(state => state.initialize);
+
+    useEffect(() => {
+        initialize();
+    }, [initialize]);
+
+    const activeDeals = deals.filter(d => d.status === 'active');
+
     // Shared ticker component for internal use
     const TickerBelt = () => (
-        <div className="bg-black py-1.5 overflow-hidden flex items-center">
+        <div className="bg-black py-1 md:py-1.5 overflow-hidden flex items-center">
             <div className="flex animate-ticker whitespace-nowrap min-w-full">
                 {[...Array(30)].map((_, i) => (
-                    <span key={i} className="text-white text-[9px] font-black uppercase tracking-[0.3em] px-4">
+                    <span key={i} className="text-white text-[8px] md:text-[9px] font-black uppercase tracking-[0.3em] px-4">
                         OFFER
                     </span>
                 ))}
@@ -19,7 +30,7 @@ const PromoBanners = () => {
     );
 
     return (
-        <div className="w-full bg-white pb-4">
+        <div className="w-full bg-white pb-2 md:pb-4">
             {/* Main Hero Promo Banner */}
             <div className="w-full pt-0 pb-1 md:pb-1">
                 <div
@@ -97,41 +108,42 @@ const PromoBanners = () => {
             <TickerBelt />
 
             {/* Deal of the Day Section */}
-            <div className="py-6 md:py-6 bg-white overflow-hidden">
-                <div className="container mx-auto px-4 md:px-12 lg:px-24">
+            <div className="py-2 md:py-6 bg-white overflow-hidden">
+                <div className="container mx-auto px-3 md:px-12 lg:px-24">
                     {/* Section Header */}
-                    <div className="flex flex-col items-center mb-6 md:mb-8 text-center">
+                    <div className="flex flex-col items-center mb-4 md:mb-8 text-center">
                         <div className="flex items-center gap-2 group">
-                            <Heart fill={currentBgColor} size={20} className="animate-pulse" />
-                            <h2 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-black">Deal of the Day</h2>
-                            <Heart fill={currentBgColor} size={20} className="animate-pulse" />
+                            <Heart fill={currentBgColor} size={16} className="animate-pulse md:w-[20px] md:h-[20px]" />
+                            <h2 className="text-xl md:text-4xl font-black uppercase tracking-tighter text-black">Deal of the Day</h2>
+                            <Heart fill={currentBgColor} size={16} className="animate-pulse md:w-[20px] md:h-[20px]" />
                         </div>
-                        <p className="text-[11px] md:text-xs font-black text-gray-400 uppercase tracking-[0.2em] mt-2">
+                        <p className="text-[9px] md:text-xs font-black text-gray-400 uppercase tracking-[0.2em] mt-1 md:mt-2">
                             Today's Deal • <span style={{ color: currentBgColor }}>Gone Tomorrow</span>
                         </p>
                     </div>
 
                     {/* Brand Cards Grid */}
-                    <div className="flex overflow-x-auto scrollbar-hide gap-4 md:grid md:grid-cols-5 md:gap-6 pb-6">
-                        {[
-                            { name: 'Snitch', promo: 'STARTS ₹799', bg: 'bg-[#f8f8f8]' },
-                            { name: 'Varanga', promo: 'UPTO 80% OFF', bg: 'bg-[#fff0f3]' },
-                            { name: 'Jewellery', promo: 'STARTS ₹99', bg: 'bg-[#fff9eb]' },
-                            { name: 'Revolte', promo: 'UPTO 60% OFF', bg: 'bg-[#f0f9ff]' },
-                            { name: 'Miraggio', promo: 'UPTO 85% OFF', bg: 'bg-[#fdf2ff]' },
-                        ].map((brand, i) => (
-                            <div key={i} className={`min-w-[160px] md:min-w-0 ${brand.bg} rounded-[32px] p-5 flex flex-col items-center justify-between text-center group cursor-pointer hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-gray-100/50`}>
-                                <div className="text-[11px] font-black text-gray-400 uppercase tracking-tighter mb-4 opacity-50 group-hover:opacity-100 transition-opacity">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 md:gap-6 pb-4 md:pb-6">
+                        {activeDeals.map((brand, i) => (
+                            <div key={i} className={`flex flex-col ${brand.bg} rounded-[24px] md:rounded-[32px] p-3 md:p-5 items-center justify-between text-center group cursor-pointer hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-gray-100/50`}>
+                                <div className="text-[9px] md:text-[11px] font-black text-gray-400 uppercase tracking-tighter mb-2 md:mb-4 opacity-70 group-hover:opacity-100 transition-opacity">
                                     {brand.name}
                                 </div>
-                                <div className="w-full aspect-[4/5] bg-white/40 rounded-2xl mb-5 overflow-hidden relative shadow-inner">
-                                    {/* Mock brand visual placeholder */}
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-10 group-hover:opacity-20 transition-opacity">
-                                        <div className="w-12 h-12 rounded-full border-4 border-black" />
-                                    </div>
+                                <div className="w-full aspect-[4/5] bg-white rounded-xl md:rounded-2xl mb-3 md:mb-5 overflow-hidden relative shadow-sm group-hover:shadow-md transition-shadow">
+                                    {brand.image ? (
+                                        <img
+                                            src={brand.image}
+                                            alt={brand.name}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                        />
+                                    ) : (
+                                        <div className="absolute inset-0 flex items-center justify-center opacity-10">
+                                            <div className="w-12 h-12 rounded-full border-4 border-black" />
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="bg-white text-black text-[11px] font-black px-6 py-3 rounded-xl shadow-lg w-full group-hover:text-white transition-all duration-300 transform group-hover:scale-105"
-                                    style={{ backgroundColor: brand.promo ? 'white' : undefined }}
+                                <div className="bg-white text-black text-[9px] md:text-[11px] font-black px-3 md:px-6 py-2 md:py-3 rounded-lg md:rounded-xl shadow-lg w-full group-hover:text-white transition-all duration-300 transform group-hover:scale-105"
+                                    style={{ backgroundColor: 'white' }}
                                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = currentBgColor}
                                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
                                 >
