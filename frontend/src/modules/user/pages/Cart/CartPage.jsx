@@ -13,7 +13,11 @@ const CartPage = () => {
     const navigate = useNavigate();
     const [isLocationModalOpen, setIsLocationModalOpen] = React.useState(false);
 
-    const totalMRP = cart.reduce((acc, item) => acc + (item.originalPrice * item.quantity), 0);
+    const totalMRP = cart.reduce((acc, item) => {
+        const itemSellingPrice = item.discountedPrice !== undefined ? item.discountedPrice : (item.price || item.originalPrice || 0);
+        const itemMRP = Math.max(item.originalPrice || 0, item.price || 0, itemSellingPrice);
+        return acc + (itemMRP * item.quantity);
+    }, 0);
     const totalDiscount = totalMRP - getCartTotal();
 
     if (cart.length === 0) {
@@ -146,10 +150,18 @@ const CartPage = () => {
                                         </button>
                                         <div className="text-right">
                                             <div className="flex items-center gap-2 justify-end mb-0.5">
-                                                <span className="text-lg font-black text-black">₹{item.discountedPrice * item.quantity}</span>
-                                                <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{item.discount} OFF</span>
+                                                <span className="text-lg font-black text-black">
+                                                    ₹{((item.discountedPrice !== undefined ? item.discountedPrice : (item.price || item.originalPrice || 0)) * item.quantity).toFixed(0)}
+                                                </span>
+                                                {(item.discount || (item.originalPrice > (item.discountedPrice || item.price))) && (
+                                                    <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                                        {item.discount || `${Math.round(((item.originalPrice - (item.discountedPrice || item.price)) / item.originalPrice) * 100)}% OFF`}
+                                                    </span>
+                                                )}
                                             </div>
-                                            <span className="text-[12px] font-bold text-gray-400 line-through">₹{item.originalPrice * item.quantity}</span>
+                                            {(item.originalPrice > (item.discountedPrice || item.price)) && (
+                                                <span className="text-[12px] font-bold text-gray-400 line-through">₹{item.originalPrice * item.quantity}</span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

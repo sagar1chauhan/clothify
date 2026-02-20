@@ -26,7 +26,8 @@ import {
     Package,
     LocateFixed,
     Search,
-    MapPinned
+    MapPinned,
+    Tag
 } from 'lucide-react';
 
 const PaymentPage = () => {
@@ -48,6 +49,12 @@ const PaymentPage = () => {
     const [expandedOption, setExpandedOption] = useState('');
     const isNavigatingToSuccess = React.useRef(false);
 
+    // Promo Code States
+    const [promoCode, setPromoCode] = useState('');
+    const [appliedPromo, setAppliedPromo] = useState(null);
+    const [promoError, setPromoError] = useState('');
+    const [isApplyingPromo, setIsApplyingPromo] = useState(false);
+
     // Sync addresses from localStorage on mount
     useEffect(() => {
         refreshAddresses();
@@ -68,16 +75,87 @@ const PaymentPage = () => {
     }, [activeAddress]);
 
     // Calculate totals
-    const totalMRP = cart.reduce((acc, item) => acc + (item.originalPrice || item.price) * item.quantity, 0);
-    const totalDiscount = cart.reduce((acc, item) => {
-        const itemPrice = item.originalPrice || item.price;
-        const itemDiscounted = item.discountedPrice !== undefined ? item.discountedPrice : itemPrice;
-        return acc + (itemPrice - itemDiscounted) * item.quantity;
+    const totalMRP = cart.reduce((acc, item) => {
+        const itemSellingPrice = item.discountedPrice !== undefined ? item.discountedPrice : (item.price || item.originalPrice || 0);
+        const itemMRP = Math.max(item.originalPrice || 0, item.price || 0, itemSellingPrice);
+        return acc + (itemMRP * item.quantity);
     }, 0);
 
+    const totalDiscount = totalMRP - getCartTotal();
+
     const platformFee = 20;
-    const shipping = totalMRP > 500 ? 0 : 40;
-    const finalTotal = totalMRP - totalDiscount + platformFee + shipping;
+    const shipping = getCartTotal() > 500 ? 0 : 40;
+
+    // Calculate Promo Discount
+    let promoDiscount = 0;
+    if (appliedPromo) {
+        const subtotal = totalMRP - totalDiscount;
+        if (appliedPromo.type === 'percentage') {
+            promoDiscount = (subtotal * appliedPromo.value) / 100;
+            if (appliedPromo.maxDiscount) {
+                promoDiscount = Math.min(promoDiscount, appliedPromo.maxDiscount);
+            }
+        } else {
+            promoDiscount = appliedPromo.value;
+        }
+    }
+
+    const finalTotal = totalMRP - totalDiscount - promoDiscount + platformFee + shipping;
+
+    const handleApplyPromo = (codeToApply) => {
+        const finalCode = (typeof codeToApply === 'string' ? codeToApply : promoCode).trim();
+        if (!finalCode) {
+            setPromoError('Please enter a code');
+            return;
+        }
+
+        setIsApplyingPromo(true);
+        setPromoError('');
+
+        // Simulate API call or check local storage
+        setTimeout(() => {
+            const savedCodes = localStorage.getItem('admin-promocodes');
+            const subtotal = totalMRP - totalDiscount;
+
+            if (savedCodes) {
+                const codes = JSON.parse(savedCodes);
+                const found = codes.find(c => c.code.toUpperCase() === finalCode.toUpperCase() && c.status === 'active');
+
+                if (found) {
+                    const now = new Date();
+                    if (new Date(found.endDate) < now) {
+                        setPromoError('This code has expired');
+                    } else if (subtotal < found.minPurchase) {
+                        setPromoError(`Minimum purchase of ₹${found.minPurchase} required`);
+                    } else if (found.usageLimit !== -1 && found.usedCount >= found.usageLimit) {
+                        setPromoError('Usage limit reached for this code');
+                    } else {
+                        setAppliedPromo(found);
+                        setPromoCode(finalCode);
+                    }
+                } else {
+                    setPromoError('Invalid promo code');
+                }
+            } else {
+                setPromoError('Invalid promo code');
+            }
+            setIsApplyingPromo(false);
+        }, 800);
+    };
+
+    // Auto-apply code from Offers page
+    useEffect(() => {
+        if (location.state?.appliedCode) {
+            handleApplyPromo(location.state.appliedCode);
+            // Clear the state so it doesn't re-apply on refresh
+            navigate(location.pathname, { replace: true, state: { ...location.state, appliedCode: undefined } });
+        }
+    }, [location.state]);
+
+    const handleRemovePromo = () => {
+        setAppliedPromo(null);
+        setPromoError('');
+    };
 
     const handleSelectAddress = (addr) => {
         setCurrentAddress(addr);
@@ -298,14 +376,73 @@ const PaymentPage = () => {
                     )}
                 </div>
 
-                {/* Coupons & Bank Offers */}
-                <div className="bg-white rounded-xl p-4 mb-4 shadow-sm flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors group">
-                    <div>
-                        <h3 className="text-[13px] font-black uppercase tracking-tight text-gray-900 mb-1">Coupons & Bank Offers</h3>
-                        <p className="text-[10px] font-bold text-gray-400">Save more with coupons and bank offers</p>
+                {/* Promo Code Section */}
+                <div className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Tag size={16} className="text-gray-700" />
+                        <span className="text-[13px] font-black text-gray-900 uppercase tracking-tight">Apply Promo Code</span>
                     </div>
-                    <div className="flex items-center gap-2 text-red-500 font-bold text-xs uppercase group-hover:gap-3 transition-all">
-                        All Offers <ChevronRight size={14} />
+
+                    {!appliedPromo ? (
+                        <div className="space-y-2">
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Enter code (e.g. SAVE20)"
+                                    value={promoCode}
+                                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                                    className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold focus:bg-white focus:border-black outline-none transition-all uppercase"
+                                />
+                                <button
+                                    onClick={handleApplyPromo}
+                                    disabled={isApplyingPromo}
+                                    className="px-6 py-2 bg-black text-white text-xs font-black uppercase tracking-widest rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all shadow-md active:scale-95"
+                                >
+                                    {isApplyingPromo ? '...' : 'Apply'}
+                                </button>
+                            </div>
+                            {promoError && (
+                                <p className="text-[10px] font-bold text-red-500 animate-fadeIn ml-1">{promoError}</p>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-xl animate-scaleIn">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
+                                    <Check size={16} className="text-white" />
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[12px] font-black text-gray-900 uppercase tracking-wider">{appliedPromo.code}</span>
+                                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-tight">Applied</span>
+                                    </div>
+                                    <p className="text-[10px] font-bold text-emerald-600">You saved ₹{promoDiscount.toFixed(0)} additional!</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleRemovePromo}
+                                className="p-2 hover:bg-emerald-100 rounded-full transition-colors"
+                            >
+                                <X size={16} className="text-emerald-700" />
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Coupons & Bank Offers */}
+                <div
+                    onClick={() => navigate('/offers', { state: { from: 'payment', selectedAddress: currentAddress } })}
+                    className="bg-white rounded-xl p-4 mb-4 shadow-sm flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors group"
+                >
+                    <div className="flex items-center gap-3">
+                        <Percent size={18} className="text-gray-700" />
+                        <div>
+                            <h3 className="text-[13px] font-black uppercase tracking-tight text-gray-900 mb-0.5">Available Offers</h3>
+                            <p className="text-[10px] font-bold text-gray-400">Tap to see coupons for you</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-[#e53e70] font-bold text-xs uppercase group-hover:gap-3 transition-all">
+                        View All <ChevronRight size={14} />
                     </div>
                 </div>
 
@@ -479,6 +616,14 @@ const PaymentPage = () => {
                             <span className="text-gray-500 font-medium">Discount on MRP</span>
                             <span className="text-emerald-600 font-bold">-₹{totalDiscount}</span>
                         </div>
+                        {appliedPromo && (
+                            <div className="flex justify-between text-[13px] animate-fadeInUp">
+                                <span className="text-gray-500 font-medium flex items-center gap-1.5">
+                                    Coupon <span className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest">{appliedPromo.code}</span>
+                                </span>
+                                <span className="text-emerald-600 font-bold">-₹{promoDiscount.toFixed(0)}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between text-[13px]">
                             <span className="text-gray-500 font-medium">Platform Fee</span>
                             <span className="text-gray-900 font-bold">₹{platformFee}</span>

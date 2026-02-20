@@ -62,10 +62,16 @@ const ManageProducts = () => {
       ? JSON.parse(savedProducts)
       : initialProducts;
 
-    // Filter by vendor
-    const vendorProducts = allProducts.filter(
-      (p) => p.vendorId === parseInt(vendorId)
-    );
+    // Filter by vendor and normalize data
+    const vendorProducts = allProducts
+      .filter((p) => p.vendorId === parseInt(vendorId))
+      .map((p) => ({
+        ...p,
+        // Use vendorPrice as the primary price for vendors, fallback to price or discountedPrice
+        price: p.vendorPrice || p.price || p.discountedPrice || 0,
+        stockQuantity: p.stockQuantity || p.quantity || 0,
+        stock: p.stock || (p.stockQuantity > 0 ? "in_stock" : "out_of_stock")
+      }));
     setProducts(vendorProducts);
   };
 
